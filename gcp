@@ -154,7 +154,7 @@ install_gcloud() {
     echo -e "${CYAN}[!]${RESET} This may take 2-3 minutes."
     
     # Install Python 3.11 (compatible with gcloud)
-    pkg install python-3.11 -y > /dev/null 2>&1 2>/dev/null || pkg install python -y > /dev/null 2>&1
+    pkg install python -y > /dev/null 2>&1 2>/dev/null || pkg install python -y > /dev/null 2>&1
     
     # Download and install gcloud
     curl -o $PREFIX/bin/gcloud-install.sh https://sdk.cloud.google.com > /dev/null 2>&1
