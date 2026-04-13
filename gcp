@@ -1,9 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/bash
-set -e
 
 # ==============================================
-#        VLESS GCP DEPLOYER - TERMUX AIO
-#        github.com/qkc404/gcp
+#     VLESS GCP DEPLOYER - FULL UI AUTOMATION
+#     github.com/qkc404/gcp
 # ==============================================
 
 # --- Colors ---
@@ -15,26 +14,21 @@ BOLD='\033[1m'
 WHITE='\033[1;37m'
 RESET='\033[0m'
 
-# ==============================================
-#        ONE-TIME ACTIVATION BLOCK
-# ==============================================
+# --- Activation ---
 ACTIVATION_FILE="$HOME/.termux/.gcp_activated"
 VALID_TOKEN="PRVTSPYYY404"
 
 show_banner() {
     clear
     echo -e "${BOLD}${CYAN}=========================================${RESET}"
-    echo -e "${BOLD}${CYAN}   VLESS GCP DEPLOYER - TERMUX AIO      ${RESET}"
+    echo -e "${BOLD}${CYAN}   VLESS GCP DEPLOYER - FULL AUTO       ${RESET}"
     echo -e "${BOLD}${CYAN}   github.com/qkc404/gcp                ${RESET}"
     echo -e "${BOLD}${CYAN}=========================================${RESET}"
     echo ""
 }
 
 check_activation() {
-    if [ -f "$ACTIVATION_FILE" ]; then
-        return 0
-    fi
-    return 1
+    [ -f "$ACTIVATION_FILE" ] && return 0 || return 1
 }
 
 activate_script() {
@@ -43,35 +37,125 @@ activate_script() {
     echo -e "${BOLD}${CYAN}   VLESS GCP DEPLOYER - ACTIVATION      ${RESET}"
     echo -e "${BOLD}${CYAN}=========================================${RESET}"
     echo ""
-    echo -e "${WHITE}This script requires a one-time activation code.${RESET}"
-    echo -e "${WHITE}Enter the code provided to you to continue.${RESET}"
+    echo -e "${WHITE}Enter activation code:${RESET}"
     echo ""
     
     local attempts=0
-    local max_attempts=5
-    
-    while [ $attempts -lt $max_attempts ]; do
-        read -p "$(echo -e "${CYAN}[?]${RESET} Activation Code: ")" USER_TOKEN
-        
+    while [ $attempts -lt 5 ]; do
+        read -p "$(echo -e "${CYAN}[?]${RESET} Code: ")" USER_TOKEN
         if [ "$USER_TOKEN" = "$VALID_TOKEN" ]; then
-            echo ""
-            echo -e "${GREEN}[OK]${RESET} Activation successful!"
+            echo -e "${GREEN}[OK]${RESET} Activated!"
             mkdir -p "$HOME/.termux"
             echo "activated_on=$(date)" > "$ACTIVATION_FILE"
-            echo "token=$VALID_TOKEN" >> "$ACTIVATION_FILE"
             sleep 1
             return 0
-        else
-            attempts=$((attempts + 1))
-            remaining=$((max_attempts - attempts))
-            echo -e "${RED}[ERROR]${RESET} Invalid code. ${remaining} attempt(s) remaining."
-            echo ""
         fi
+        attempts=$((attempts + 1))
+        echo -e "${RED}[ERROR]${RESET} Invalid. $((5 - attempts)) attempts left."
     done
-    
-    echo -e "${RED}[ERROR]${RESET} Maximum attempts exceeded."
-    echo -e "${YELLOW}[!]${RESET} Please contact the script provider for a valid activation code."
     exit 1
+}
+
+# ==============================================
+#        UI AUTOMATION ENGINE (HIDDEN POWER)
+# ==============================================
+
+# Dump UI hierarchy and search for elements
+dump_ui() {
+    if command -v uiautomator &> /dev/null; then
+        uiautomator dump /sdcard/ui.xml 2>/dev/null || true
+        echo "/sdcard/ui.xml"
+    elif command -v adb &> /dev/null; then
+        adb shell uiautomator dump /sdcard/ui.xml 2>/dev/null || true
+        adb pull /sdcard/ui.xml /tmp/ui.xml 2>/dev/null || true
+        echo "/tmp/ui.xml"
+    else
+        echo ""
+    fi
+}
+
+# Click on element containing text
+click_by_text() {
+    local search_text="$1"
+    local ui_file=$(dump_ui)
+    
+    if [ -n "$ui_file" ] && [ -f "$ui_file" ]; then
+        # Extract bounds for element containing the text
+        local bounds=$(grep -i "$search_text" "$ui_file" 2>/dev/null | grep -o 'bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | head -1)
+        
+        if [ -n "$bounds" ]; then
+            local coords=$(echo "$bounds" | sed 's/.*\[\([0-9]*\),\([0-9]*\)\]\[\([0-9]*\),\([0-9]*\)\].*/\1 \2 \3 \4/')
+            local x1=$(echo "$coords" | cut -d' ' -f1)
+            local y1=$(echo "$coords" | cut -d' ' -f2)
+            local x2=$(echo "$coords" | cut -d' ' -f3)
+            local y2=$(echo "$coords" | cut -d' ' -f4)
+            local cx=$(( (x1 + x2) / 2 ))
+            local cy=$(( (y1 + y2) / 2 ))
+            
+            echo -e "${CYAN}[*]${RESET} Clicking '$search_text' at ($cx, $cy)"
+            input tap $cx $cy 2>/dev/null || true
+            rm -f "$ui_file" 2>/dev/null
+            return 0
+        fi
+        rm -f "$ui_file" 2>/dev/null
+    fi
+    return 1
+}
+
+# Click checkbox if present
+click_checkbox() {
+    local ui_file=$(dump_ui)
+    if [ -n "$ui_file" ] && [ -f "$ui_file" ]; then
+        if grep -q "checkbox\|CheckBox" "$ui_file" 2>/dev/null; then
+            # Check if unchecked (no 'checked' attribute)
+            if ! grep -q "checked=\"true\"" "$ui_file" 2>/dev/null; then
+                click_by_text "checkbox"
+                return 0
+            fi
+        fi
+        rm -f "$ui_file" 2>/dev/null
+    fi
+    return 1
+}
+
+# Open Cloud Shell via 3-dots menu
+open_cloudshell_menu() {
+    echo -e "${CYAN}[*]${RESET} Looking for Cloud Shell activation..."
+    
+    # Try direct Cloud Shell URL first
+    am start -a android.intent.action.VIEW -d "https://console.cloud.google.com/cloudshell/open" 2>/dev/null || true
+    sleep 1
+    
+    # Try to find and click 3-dots menu
+    click_by_text "more_vert" || click_by_text "More" || input tap 1000 200 2>/dev/null || true
+    sleep 1
+    
+    # Try to find and click Cloud Shell
+    click_by_text "Cloud Shell" || click_by_text "cloudshell" || click_by_text ">_" || input tap 1000 350 2>/dev/null || true
+    
+    echo -e "${GREEN}[OK]${RESET} Cloud Shell activation attempted."
+}
+
+# Complete welcome flow
+complete_welcome_flow() {
+    echo -e "${CYAN}[*]${RESET} Scanning for welcome dialogs..."
+    
+    # Wait for page load
+    sleep 3
+    
+    # Click "Got it" / "Accept" / "Continue" on welcome
+    click_by_text "Got it" || click_by_text "Accept" || click_by_text "Continue" || click_by_text "OK" || click_by_text "Next"
+    sleep 1
+    
+    # Check and click any checkboxes (Terms of Service)
+    click_checkbox
+    sleep 1
+    
+    # Click "Agree" or "Continue"
+    click_by_text "Agree" || click_by_text "Agree and Continue" || click_by_text "Continue" || click_by_text "Accept"
+    sleep 2
+    
+    echo -e "${GREEN}[OK]${RESET} Welcome flow completed."
 }
 
 # ==============================================
@@ -80,36 +164,23 @@ activate_script() {
 
 check_gcloud() {
     export PATH="$PREFIX/google-cloud-sdk/bin:$PATH" 2>/dev/null || true
-    if command -v gcloud &> /dev/null; then
-        return 0
-    fi
-    return 1
+    command -v gcloud &> /dev/null && return 0 || return 1
 }
 
 check_auth() {
-    if ! gcloud auth list --format="value(account)" 2>/dev/null | grep -q "@"; then
-        return 1
-    fi
-    return 0
+    gcloud auth list --format="value(account)" 2>/dev/null | grep -q "@" && return 0 || return 1
 }
 
 install_gcloud() {
     show_banner
     if check_gcloud; then
         echo -e "${GREEN}[OK]${RESET} gcloud already installed."
-        echo ""
         read -p "Press Enter to return..."
         return
     fi
     
     echo -e "${YELLOW}[*]${RESET} Installing Google Cloud SDK..."
-    echo -e "${CYAN}[!]${RESET} This will take 2-3 minutes."
-    echo ""
-    
-    echo -e "${CYAN}[*]${RESET} Installing Python..."
-    pkg install python -y > /dev/null 2>&1 || true
-    
-    echo -e "${CYAN}[*]${RESET} Downloading Google Cloud SDK..."
+    pkg install python qrencode -y > /dev/null 2>&1 || true
     curl -L https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-arm.tar.gz -o $PREFIX/tmp/gcloud.tar.gz 2>/dev/null || true
     mkdir -p $PREFIX/tmp
     cd $PREFIX/tmp
@@ -117,68 +188,30 @@ install_gcloud() {
     mv google-cloud-sdk $PREFIX/ 2>/dev/null || true
     rm -f gcloud.tar.gz
     cd $HOME
-    
-    echo -e "${CYAN}[*]${RESET} Running installer..."
-    $PREFIX/google-cloud-sdk/install.sh --quiet --usage-reporting=false --path-update=false --rc-path=$HOME/.bashrc --command-completion=false 2>/dev/null || true
-    
+    $PREFIX/google-cloud-sdk/install.sh --quiet --usage-reporting=false --path-update=false 2>/dev/null || true
     export PATH="$PREFIX/google-cloud-sdk/bin:$PATH"
     echo 'export PATH="$PREFIX/google-cloud-sdk/bin:$PATH"' >> ~/.bashrc
     echo 'export CLOUDSDK_PYTHON="$PREFIX/bin/python"' >> ~/.bashrc
     source ~/.bashrc 2>/dev/null || true
-    
     python -m pip install --quiet six 2>/dev/null || true
-    
-    echo ""
     echo -e "${GREEN}[OK]${RESET} Google Cloud SDK installed."
-    echo ""
     read -p "Press Enter to return..."
 }
 
 authenticate() {
     show_banner
-    if ! check_gcloud; then
-        echo -e "${RED}[ERROR]${RESET} gcloud not installed. Run Full Setup first."
-        read -p "Press Enter to return..."
-        return
-    fi
-    
-    echo -e "${YELLOW}[*]${RESET} Starting authentication..."
-    echo -e "${CYAN}[!]${RESET} A URL will appear. Open it in your browser."
-    echo -e "${CYAN}[!]${RESET} Log in with your Qwiklabs Google account."
-    echo -e "${CYAN}[!]${RESET} Paste the verification code back here."
-    echo ""
-    
-    if ! gcloud auth login --no-launch-browser; then
-        echo -e "${RED}[ERROR]${RESET} Authentication failed."
-    else
-        echo -e "${GREEN}[OK]${RESET} Authentication complete."
-    fi
-    echo ""
+    check_gcloud || { echo -e "${RED}[ERROR]${RESET} gcloud not installed."; read -p "Press Enter..."; return; }
+    echo -e "${YELLOW}[*]${RESET} Authenticating..."
+    gcloud auth login --no-launch-browser || echo -e "${RED}[ERROR]${RESET} Auth failed."
     read -p "Press Enter to return..."
 }
 
 set_project() {
     show_banner
-    if ! check_gcloud; then
-        echo -e "${RED}[ERROR]${RESET} gcloud not installed. Run Full Setup first."
-        read -p "Press Enter to return..."
-        return
-    fi
-    
-    echo -e "${YELLOW}[?]${RESET} Enter the Qwiklabs Project ID:"
-    echo -e "${CYAN}    (Find this in the GCP Console URL)${RESET}"
+    check_gcloud || { echo -e "${RED}[ERROR]${RESET} gcloud not installed."; read -p "Press Enter..."; return; }
+    echo -e "${YELLOW}[?]${RESET} Enter Project ID:"
     read -p "Project ID: " PROJECT_ID
-    
-    if [ -z "$PROJECT_ID" ]; then
-        echo -e "${RED}[ERROR]${RESET} Project ID cannot be empty."
-    else
-        if gcloud config set project "$PROJECT_ID" 2>/dev/null; then
-            echo -e "${GREEN}[OK]${RESET} Project set to: $PROJECT_ID"
-        else
-            echo -e "${RED}[ERROR]${RESET} Failed to set project."
-        fi
-    fi
-    echo ""
+    [ -n "$PROJECT_ID" ] && gcloud config set project "$PROJECT_ID" && echo -e "${GREEN}[OK]${RESET} Project set."
     read -p "Press Enter to return..."
 }
 
@@ -188,92 +221,102 @@ set_project() {
 
 quick_deploy() {
     show_banner
-    if ! check_gcloud; then
-        echo -e "${RED}[ERROR]${RESET} gcloud not installed. Run Full Setup first."
-        read -p "Press Enter to return..."
-        return
+    check_gcloud || { echo -e "${RED}[ERROR]${RESET} gcloud not installed."; read -p "Press Enter..."; return; }
+    check_auth || { echo -e "${RED}[ERROR]${RESET} Not authenticated."; read -p "Press Enter..."; return; }
+    
+    echo -e "${YELLOW}[*]${RESET} FULL UI AUTOMATION MODE"
+    echo ""
+    echo -e "${CYAN}[?]${RESET} Paste Qwiklabs fallback URL:"
+    read -p "URL: " LAB_URL
+    
+    if [ -n "$LAB_URL" ]; then
+        echo -e "${BOLD}${GREEN}>>> RECEIVED!${RESET}"
+        echo -e "${CYAN}[*]${RESET} Opening lab in browser..."
+        termux-open-url "$LAB_URL" 2>/dev/null || true
+        echo -e "${CYAN}[*]${RESET} Waiting for page load..."
+        sleep 5
+        
+        echo -e "${YELLOW}[*]${RESET} Starting UI automation..."
+        complete_welcome_flow
+        sleep 2
+        open_cloudshell_menu
     fi
     
-    if ! check_auth; then
-        echo -e "${RED}[ERROR]${RESET} Not authenticated. Run option 2 first."
-        read -p "Press Enter to return..."
-        return
+    echo ""
+    echo -e "${CYAN}=========================================${RESET}"
+    echo -e "${WHITE}>>> PLEASE AUTHORIZE CLOUD SHELL <<<${RESET}"
+    echo -e "${CYAN}=========================================${RESET}"
+    echo ""
+    read -p "Press Enter AFTER authorization is complete..."
+    echo ""
+    echo -e "${YELLOW}[*]${RESET} Deploying via Cloud Shell..."
+    echo -e "${BOLD}${CYAN}=========================================${RESET}"
+    
+    DEPLOY_OUTPUT=$(gcloud cloud-shell ssh --authorize-session --command="curl -sL https://raw.githubusercontent.com/qkc404/gcp/main/deploy.sh -o deploy.sh && chmod +x deploy.sh && echo -e 'prvtspyyy404\n4\n3' | ./deploy.sh 2>&1" 2>/dev/null || true)
+    
+    echo "$DEPLOY_OUTPUT"
+    echo -e "${BOLD}${CYAN}=========================================${RESET}"
+    
+    VLESS_URI=$(echo "$DEPLOY_OUTPUT" | grep -o "vless://[^[:space:]]*" | head -1)
+    if [ -n "$VLESS_URI" ]; then
+        echo ""
+        echo -e "${BOLD}${GREEN}VLESS URI:${RESET}"
+        echo -e "${CYAN}$VLESS_URI${RESET}"
+        echo ""
+        echo -e "${YELLOW}[*]${RESET} QR Code:"
+        echo "$VLESS_URI" | qrencode -t ANSIUTF8 2>/dev/null || echo -e "${YELLOW}[!]${RESET} Install qrencode for QR display."
     fi
     
-    echo -e "${YELLOW}[*]${RESET} Quick Deploy with default settings..."
-    echo -e "${CYAN}    Service: prvtspyyy404 | CPU: 2 vCPU | RAM: 4 GiB${RESET}"
-    echo ""
-    echo -e "${CYAN}[!]${RESET} Opening GCP Console in browser..."
-    termux-open-url "https://console.cloud.google.com/" 2>/dev/null || true
-    echo ""
-    echo -e "${CYAN}[ACTION REQUIRED]${RESET} In your browser:"
-    echo "  1. Click the Cloud Shell icon (>_) in the top-right."
-    echo "  2. Click 'Authorize' if prompted."
-    echo "  3. Wait for the terminal prompt ($) to appear."
-    echo ""
-    read -p "Press Enter AFTER Cloud Shell is ready..."
-    echo ""
-    echo -e "${YELLOW}[*]${RESET} Connecting to Cloud Shell..."
-    echo -e "${BOLD}${CYAN}=========================================${RESET}"
-    
-    gcloud cloud-shell ssh --authorize-session --command="curl -sL https://raw.githubusercontent.com/qkc404/gcp/main/deploy.sh -o deploy.sh && chmod +x deploy.sh && echo -e 'prvtspyyy404\n4\n3' | ./deploy.sh 2>&1" || true
-    
-    echo -e "${BOLD}${CYAN}=========================================${RESET}"
-    echo -e "${GREEN}[OK]${RESET} Deployment complete. Check output above for VLESS URI."
-    echo ""
+    echo -e "${GREEN}[OK]${RESET} Deployment complete."
     read -p "Press Enter to return..."
 }
 
 custom_deploy() {
     show_banner
-    if ! check_gcloud; then
-        echo -e "${RED}[ERROR]${RESET} gcloud not installed. Run Full Setup first."
-        read -p "Press Enter to return..."
-        return
-    fi
-    
-    if ! check_auth; then
-        echo -e "${RED}[ERROR]${RESET} Not authenticated. Run option 2 first."
-        read -p "Press Enter to return..."
-        return
-    fi
+    check_gcloud || { echo -e "${RED}[ERROR]${RESET} gcloud not installed."; read -p "Press Enter..."; return; }
+    check_auth || { echo -e "${RED}[ERROR]${RESET} Not authenticated."; read -p "Press Enter..."; return; }
     
     echo -e "${YELLOW}[*]${RESET} Custom Deployment"
-    echo ""
-    read -p "Service name [default: prvtspyyy404]: " SNAME
-    SNAME="${SNAME:-prvtspyyy404}"
-    echo ""
+    read -p "Service name [prvtspyyy404]: " SNAME; SNAME="${SNAME:-prvtspyyy404}"
     echo -e "${CYAN}Select CPU/RAM:${RESET}"
-    echo "  [1] 1 vCPU, 1 GiB"
-    echo "  [2] 1 vCPU, 2 GiB"
-    echo "  [3] 2 vCPU, 2 GiB"
-    echo "  [4] 2 vCPU, 4 GiB (RECOMMENDED)"
-    echo "  [5] 4 vCPU, 4 GiB"
-    read -p "Choice [1-5]: " CPURAM
-    CPURAM="${CPURAM:-4}"
-    echo ""
-    echo -e "${CYAN}Select output:${RESET}"
-    echo "  [1] QR Code only"
-    echo "  [2] Ping Monitor only"
-    echo "  [3] Both"
-    read -p "Choice [1-3]: " OUTPUT
-    OUTPUT="${OUTPUT:-3}"
+    echo "  [1] 1v1G [2] 1v2G [3] 2v2G [4] 2v4G [5] 4v4G"
+    read -p "Choice [4]: " CPURAM; CPURAM="${CPURAM:-4}"
+    read -p "Output [1=QR 2=Ping 3=Both] [3]: " OUTPUT; OUTPUT="${OUTPUT:-3}"
+    
+    echo -e "${CYAN}[?]${RESET} Paste Qwiklabs fallback URL:"
+    read -p "URL: " LAB_URL
+    
+    if [ -n "$LAB_URL" ]; then
+        echo -e "${BOLD}${GREEN}>>> RECEIVED!${RESET}"
+        termux-open-url "$LAB_URL" 2>/dev/null || true
+        sleep 5
+        complete_welcome_flow
+        open_cloudshell_menu
+    fi
     
     echo ""
-    echo -e "${CYAN}[!]${RESET} Opening GCP Console in browser..."
-    termux-open-url "https://console.cloud.google.com/" 2>/dev/null || true
+    echo -e "${CYAN}=========================================${RESET}"
+    echo -e "${WHITE}>>> PLEASE AUTHORIZE CLOUD SHELL <<<${RESET}"
+    echo -e "${CYAN}=========================================${RESET}"
     echo ""
-    echo -e "${CYAN}[ACTION REQUIRED]${RESET} Start Cloud Shell in browser, then press Enter."
-    read -p "Press Enter when ready..."
-    echo ""
+    read -p "Press Enter AFTER authorization is complete..."
+    
     echo -e "${YELLOW}[*]${RESET} Deploying..."
     echo -e "${BOLD}${CYAN}=========================================${RESET}"
     
-    gcloud cloud-shell ssh --authorize-session --command="curl -sL https://raw.githubusercontent.com/qkc404/gcp/main/deploy.sh -o deploy.sh && chmod +x deploy.sh && echo -e '$SNAME\n$CPURAM\n$OUTPUT' | ./deploy.sh 2>&1" || true
+    DEPLOY_OUTPUT=$(gcloud cloud-shell ssh --authorize-session --command="curl -sL https://raw.githubusercontent.com/qkc404/gcp/main/deploy.sh -o deploy.sh && chmod +x deploy.sh && echo -e '$SNAME\n$CPURAM\n$OUTPUT' | ./deploy.sh 2>&1" 2>/dev/null || true)
     
+    echo "$DEPLOY_OUTPUT"
     echo -e "${BOLD}${CYAN}=========================================${RESET}"
+    
+    VLESS_URI=$(echo "$DEPLOY_OUTPUT" | grep -o "vless://[^[:space:]]*" | head -1)
+    if [ -n "$VLESS_URI" ]; then
+        echo -e "${BOLD}${GREEN}VLESS URI:${RESET}"
+        echo -e "${CYAN}$VLESS_URI${RESET}"
+        echo "$VLESS_URI" | qrencode -t ANSIUTF8 2>/dev/null
+    fi
+    
     echo -e "${GREEN}[OK]${RESET} Deployment complete."
-    echo ""
     read -p "Press Enter to return..."
 }
 
@@ -283,8 +326,6 @@ full_setup() {
     set_project
     show_banner
     echo -e "${GREEN}[OK]${RESET} Full setup complete!"
-    echo -e "${CYAN}[*]${RESET} You can now run Quick Deploy (option 3)."
-    echo ""
     read -p "Press Enter to return..."
 }
 
@@ -300,7 +341,7 @@ main_menu() {
         echo ""
         echo -e "  ${BOLD}[1]${RESET} Full Setup (Install Everything)"
         echo -e "  ${BOLD}[2]${RESET} Authenticate / Set Project"
-        echo -e "  ${BOLD}[3]${RESET} Quick Deploy (Browser + Auto)"
+        echo -e "  ${BOLD}[3]${RESET} Quick Deploy (FULL UI AUTOMATION)"
         echo -e "  ${BOLD}[4]${RESET} Custom Deploy"
         echo -e "  ${BOLD}[5]${RESET} Exit"
         echo ""
@@ -308,10 +349,7 @@ main_menu() {
         
         case $CHOICE in
             1) full_setup ;;
-            2) 
-                authenticate
-                set_project
-                ;;
+            2) authenticate; set_project ;;
             3) quick_deploy ;;
             4) custom_deploy ;;
             5) echo -e "${GREEN}Goodbye.${RESET}"; exit 0 ;;
@@ -321,13 +359,14 @@ main_menu() {
 }
 
 # ==============================================
-#        SCRIPT ENTRY POINT
+#        ENTRY POINT
 # ==============================================
 
-# Check activation on every run
 if ! check_activation; then
     activate_script
 fi
 
-# Launch main menu
+# Install uiautomator if not present
+command -v uiautomator &> /dev/null || pkg install uiautomator -y > /dev/null 2>&1 || true
+
 main_menu
