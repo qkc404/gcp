@@ -117,31 +117,16 @@ spinner() {
     printf "\r${GREEN}[OK]${RESET} %s\n" "$message"
 }
 
+# ==============================================
+#        GOOGLE CLOUD SDK INSTALLATION
+# ==============================================
+
 check_gcloud() {
-    if ! command -v gcloud &> /dev/null; then
-        return 1
+    export PATH="$PREFIX/google-cloud-sdk/bin:$PATH" 2>/dev/null
+    if command -v gcloud &> /dev/null; then
+        return 0
     fi
-    return 0
-}
-
-check_auth() {
-    if ! gcloud auth list --format="value(account)" 2>/dev/null | grep -q "@"; then
-        return 1
-    fi
-    return 0
-}
-
-install_dependencies() {
-    show_banner
-    echo -e "${YELLOW}[*]${RESET} Installing dependencies..."
-    pkg update -y > /dev/null 2>&1
-    pkg upgrade -y > /dev/null 2>&1
-    pkg install -y wget > /dev/null 2>&1
-    pkg install -y curl > /dev/null 2>&1
-    pkg install -y python openssh curl which wget jq python-pip qrencode > /dev/null 2>&1 &
-    spinner $! "Installing packages"
-    echo -e "${GREEN}[OK]${RESET} Dependencies installed."
-    echo ""
+    return 1
 }
 
 install_gcloud() {
@@ -149,42 +134,46 @@ install_gcloud() {
     if check_gcloud; then
         echo -e "${GREEN}[OK]${RESET} gcloud already installed."
         echo ""
+        read -p "Press Enter to return..."
         return
     fi
     
     echo -e "${YELLOW}[*]${RESET} Installing Google Cloud SDK..."
-    echo -e "${CYAN}[!]${RESET} This may take 2-3 minutes."
+    echo -e "${CYAN}[!]${RESET} This will take 2-3 minutes."
+    echo ""
     
-    # Install Python 3.11 (compatible with gcloud)
-    pkg install python -y > /dev/null 2>&1 2>/dev/null || pkg install python -y > /dev/null 2>&1
+    # Install required packages
+    echo -e "${CYAN}[*]${RESET} Installing Python..."
+    pkg install python -y > /dev/null 2>&1
     
-    # Download and install gcloud
-    curl -o $PREFIX/bin/gcloud-install.sh https://sdk.cloud.google.com > /dev/null 2>&1
-    chmod +x $PREFIX/bin/gcloud-install.sh
-    $PREFIX/bin/gcloud-install.sh --install-dir=$PREFIX --disable-prompts > /dev/null 2>&1 &
-    spinner $! "Installing Google Cloud SDK"
-    rm $PREFIX/bin/gcloud-install.sh
+    # Download and extract
+    echo -e "${CYAN}[*]${RESET} Downloading Google Cloud SDK..."
+    curl -L https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-arm.tar.gz -o $PREFIX/tmp/gcloud.tar.gz 2>/dev/null
+    mkdir -p $PREFIX/tmp
+    cd $PREFIX/tmp
+    tar -xzf gcloud.tar.gz
+    mv google-cloud-sdk $PREFIX/
+    rm gcloud.tar.gz
+    cd $HOME
     
-    # Configure environment
+    # Run installer
+    echo -e "${CYAN}[*]${RESET} Running installer..."
+    $PREFIX/google-cloud-sdk/install.sh --quiet --usage-reporting=false --path-update=false --rc-path=$HOME/.bashrc --command-completion=false 2>/dev/null
+    
+    # Configure PATH
+    export PATH="$PREFIX/google-cloud-sdk/bin:$PATH"
     echo 'export PATH="$PREFIX/google-cloud-sdk/bin:$PATH"' >> ~/.bashrc
     echo 'export CLOUDSDK_PYTHON="$PREFIX/bin/python"' >> ~/.bashrc
-    export PATH="$PREFIX/google-cloud-sdk/bin:$PATH"
-    export CLOUDSDK_PYTHON="$PREFIX/bin/python"
+    source ~/.bashrc 2>/dev/null || true
     
-    # Install required Python module
-    python -m pip install --quiet six > /dev/null 2>&1
+    # Install Python module
+    python -m pip install --quiet six 2>/dev/null || true
     
+    echo ""
     echo -e "${GREEN}[OK]${RESET} Google Cloud SDK installed."
     echo ""
+    read -p "Press Enter to return..."
 }
-
-authenticate() {
-    show_banner
-    if ! check_gcloud; then
-        echo -e "${RED}[ERROR]${RESET} gcloud not installed. Run option 1 first."
-        read -p "Press Enter to return..."
-        return
-    fi
     
     echo -e "${YELLOW}[*]${RESET} Starting authentication..."
     echo -e "${CYAN}[!]${RESET} A URL will appear. Open it in your browser."
