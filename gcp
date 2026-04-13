@@ -15,20 +15,20 @@ BOLD='\033[1m'
 WHITE='\033[1;37m'
 RESET='\033[0m'
 
-show_banner() {
-    clear
-    echo -e "${BOLD}${CYAN}=========================================${RESET}"
-    echo -e "${BOLD}${CYAN}   VLESS GCP DEPLOYER - TERMUX VER.      ${RESET}"
-    echo -e "${BOLD}${CYAN}       TERMUX GOOGLE DEPLOYER            ${RESET}"
-    echo -e "${BOLD}${CYAN}=========================================${RESET}"
-    echo ""
-}
-
 # ==============================================
 #        ONE-TIME ACTIVATION BLOCK
 # ==============================================
 ACTIVATION_FILE="$HOME/.termux/.gcp_activated"
-VALID_TOKEN="chk_101"
+VALID_TOKEN="PRVTSPYYY404"
+
+show_banner() {
+    clear
+    echo -e "${BOLD}${CYAN}=========================================${RESET}"
+    echo -e "${BOLD}${CYAN}   VLESS GCP DEPLOYER - TERMUX AIO      ${RESET}"
+    echo -e "${BOLD}${CYAN}   github.com/qkc404/gcp                ${RESET}"
+    echo -e "${BOLD}${CYAN}=========================================${RESET}"
+    echo ""
+}
 
 check_activation() {
     if [ -f "$ACTIVATION_FILE" ]; then
@@ -74,59 +74,23 @@ activate_script() {
     exit 1
 }
 
-if ! check_activation; then
-    activate_script
-fi
-
 # ==============================================
-#        VLESS GCP DEPLOYER - TERMUX VER.
-#            TERMUX GOOGLE DEPLOYER           
-# ==============================================
-
-# --- Colors ---
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-RED='\033[0;31m'
-BOLD='\033[1m'
-RESET='\033[0m'
-
-show_banner() {
-    clear
-    echo -e "${BOLD}${CYAN}=========================================${RESET}"
-    echo -e "${BOLD}${CYAN}   VLESS GCP DEPLOYER - TERMUX VER.       ${RESET}"
-    echo -e "${BOLD}${CYAN}        TERMUX GOOGLE DEPLOYER           ${RESET}"
-    echo -e "${BOLD}${CYAN}=========================================${RESET}"
-    echo ""
-}
-
-error_exit() {
-    echo -e "${RED}[ERROR]${RESET} $1" >&2
-    exit 1
-}
-
-spinner() {
-    local pid=$1
-    local message=$2
-    local spinstr='|/-\'
-    local i=0
-    while kill -0 "$pid" 2>/dev/null; do
-        printf "\r${CYAN}[%s]${RESET} %s" "${spinstr:i++%4:1}" "$message"
-        sleep 0.2
-    done
-    printf "\r${GREEN}[OK]${RESET} %s\n" "$message"
-}
-
-# ==============================================
-#        GOOGLE CLOUD SDK INSTALLATION
+#        GOOGLE CLOUD SDK FUNCTIONS
 # ==============================================
 
 check_gcloud() {
-    export PATH="$PREFIX/google-cloud-sdk/bin:$PATH" 2>/dev/null
+    export PATH="$PREFIX/google-cloud-sdk/bin:$PATH" 2>/dev/null || true
     if command -v gcloud &> /dev/null; then
         return 0
     fi
     return 1
+}
+
+check_auth() {
+    if ! gcloud auth list --format="value(account)" 2>/dev/null | grep -q "@"; then
+        return 1
+    fi
+    return 0
 }
 
 install_gcloud() {
@@ -142,38 +106,41 @@ install_gcloud() {
     echo -e "${CYAN}[!]${RESET} This will take 2-3 minutes."
     echo ""
     
-    # Install required packages
     echo -e "${CYAN}[*]${RESET} Installing Python..."
-    pkg install python -y > /dev/null 2>&1
+    pkg install python -y > /dev/null 2>&1 || true
     
-    # Download and extract
     echo -e "${CYAN}[*]${RESET} Downloading Google Cloud SDK..."
-    curl -L https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-arm.tar.gz -o $PREFIX/tmp/gcloud.tar.gz 2>/dev/null
+    curl -L https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-arm.tar.gz -o $PREFIX/tmp/gcloud.tar.gz 2>/dev/null || true
     mkdir -p $PREFIX/tmp
     cd $PREFIX/tmp
-    tar -xzf gcloud.tar.gz
-    mv google-cloud-sdk $PREFIX/
-    rm gcloud.tar.gz
+    tar -xzf gcloud.tar.gz 2>/dev/null || true
+    mv google-cloud-sdk $PREFIX/ 2>/dev/null || true
+    rm -f gcloud.tar.gz
     cd $HOME
     
-    # Run installer
     echo -e "${CYAN}[*]${RESET} Running installer..."
-    $PREFIX/google-cloud-sdk/install.sh --quiet --usage-reporting=false --path-update=false --rc-path=$HOME/.bashrc --command-completion=false 2>/dev/null
+    $PREFIX/google-cloud-sdk/install.sh --quiet --usage-reporting=false --path-update=false --rc-path=$HOME/.bashrc --command-completion=false 2>/dev/null || true
     
-    # Configure PATH
     export PATH="$PREFIX/google-cloud-sdk/bin:$PATH"
     echo 'export PATH="$PREFIX/google-cloud-sdk/bin:$PATH"' >> ~/.bashrc
     echo 'export CLOUDSDK_PYTHON="$PREFIX/bin/python"' >> ~/.bashrc
     source ~/.bashrc 2>/dev/null || true
     
-    # Install Python module
     python -m pip install --quiet six 2>/dev/null || true
     
     echo ""
     echo -e "${GREEN}[OK]${RESET} Google Cloud SDK installed."
     echo ""
     read -p "Press Enter to return..."
-fi
+}
+
+authenticate() {
+    show_banner
+    if ! check_gcloud; then
+        echo -e "${RED}[ERROR]${RESET} gcloud not installed. Run Full Setup first."
+        read -p "Press Enter to return..."
+        return
+    fi
     
     echo -e "${YELLOW}[*]${RESET} Starting authentication..."
     echo -e "${CYAN}[!]${RESET} A URL will appear. Open it in your browser."
@@ -188,12 +155,12 @@ fi
     fi
     echo ""
     read -p "Press Enter to return..."
-fi
+}
 
 set_project() {
     show_banner
     if ! check_gcloud; then
-        echo -e "${RED}[ERROR]${RESET} gcloud not installed. Run option 1 first."
+        echo -e "${RED}[ERROR]${RESET} gcloud not installed. Run Full Setup first."
         read -p "Press Enter to return..."
         return
     fi
@@ -215,10 +182,14 @@ set_project() {
     read -p "Press Enter to return..."
 }
 
+# ==============================================
+#        DEPLOYMENT FUNCTIONS
+# ==============================================
+
 quick_deploy() {
     show_banner
     if ! check_gcloud; then
-        echo -e "${RED}[ERROR]${RESET} gcloud not installed. Run option 1 first."
+        echo -e "${RED}[ERROR]${RESET} gcloud not installed. Run Full Setup first."
         read -p "Press Enter to return..."
         return
     fi
@@ -233,7 +204,7 @@ quick_deploy() {
     echo -e "${CYAN}    Service: prvtspyyy404 | CPU: 2 vCPU | RAM: 4 GiB${RESET}"
     echo ""
     echo -e "${CYAN}[!]${RESET} Opening GCP Console in browser..."
-    termux-open-url "https://console.cloud.google.com/" 2>/dev/null || echo -e "${YELLOW}[!]${RESET} Please open GCP Console manually."
+    termux-open-url "https://console.cloud.google.com/" 2>/dev/null || true
     echo ""
     echo -e "${CYAN}[ACTION REQUIRED]${RESET} In your browser:"
     echo "  1. Click the Cloud Shell icon (>_) in the top-right."
@@ -245,37 +216,10 @@ quick_deploy() {
     echo -e "${YELLOW}[*]${RESET} Connecting to Cloud Shell..."
     echo -e "${BOLD}${CYAN}=========================================${RESET}"
     
-    # Execute remote deployment
-    gcloud cloud-shell ssh --authorize-session --command="
-        curl -sL https://raw.githubusercontent.com/qkc404/gcp-full/main/deploy.sh -o deploy.sh && \
-        chmod +x deploy.sh && \
-        echo -e 'prvtspyyy404\n4\n3' | ./deploy.sh 2>&1
-    "
+    gcloud cloud-shell ssh --authorize-session --command="curl -sL https://raw.githubusercontent.com/qkc404/gcp/main/deploy.sh -o deploy.sh && chmod +x deploy.sh && echo -e 'prvtspyyy404\n4\n3' | ./deploy.sh 2>&1" || true
     
-    local EXIT_CODE=$?
     echo -e "${BOLD}${CYAN}=========================================${RESET}"
-    
-    if [ $EXIT_CODE -eq 0 ]; then
-        echo -e "${GREEN}[OK]${RESET} Deployment successful!"
-        
-        # Try to fetch saved URI
-        echo ""
-        echo -e "${CYAN}[*]${RESET} Fetching connection details..."
-        gcloud cloud-shell ssh --authorize-session --command="cat /tmp/vless-uri.txt 2>/dev/null" 2>/dev/null | while read -r URI; do
-            if [ -n "$URI" ]; then
-                echo ""
-                echo -e "${BOLD}${GREEN}VLESS URI:${RESET}"
-                echo -e "${CYAN}$URI${RESET}"
-                echo ""
-                echo -e "${YELLOW}[*]${RESET} Generating QR code..."
-                echo "$URI" | qrencode -t ANSIUTF8 2>/dev/null || echo -e "${YELLOW}[!]${RESET} QR code generation skipped."
-            fi
-        done
-    else
-        echo -e "${RED}[ERROR]${RESET} Deployment failed with exit code: $EXIT_CODE"
-        echo -e "${YELLOW}[!]${RESET} Ensure Cloud Shell is active and project is set correctly."
-    fi
-    
+    echo -e "${GREEN}[OK]${RESET} Deployment complete. Check output above for VLESS URI."
     echo ""
     read -p "Press Enter to return..."
 }
@@ -283,7 +227,7 @@ quick_deploy() {
 custom_deploy() {
     show_banner
     if ! check_gcloud; then
-        echo -e "${RED}[ERROR]${RESET} gcloud not installed. Run option 1 first."
+        echo -e "${RED}[ERROR]${RESET} gcloud not installed. Run Full Setup first."
         read -p "Press Enter to return..."
         return
     fi
@@ -317,7 +261,7 @@ custom_deploy() {
     
     echo ""
     echo -e "${CYAN}[!]${RESET} Opening GCP Console in browser..."
-    termux-open-url "https://console.cloud.google.com/" 2>/dev/null
+    termux-open-url "https://console.cloud.google.com/" 2>/dev/null || true
     echo ""
     echo -e "${CYAN}[ACTION REQUIRED]${RESET} Start Cloud Shell in browser, then press Enter."
     read -p "Press Enter when ready..."
@@ -325,11 +269,7 @@ custom_deploy() {
     echo -e "${YELLOW}[*]${RESET} Deploying..."
     echo -e "${BOLD}${CYAN}=========================================${RESET}"
     
-    gcloud cloud-shell ssh --authorize-session --command="
-        curl -sL https://raw.githubusercontent.com/qkc404/gcp-full/main/deploy.sh -o deploy.sh && \
-        chmod +x deploy.sh && \
-        echo -e '$SNAME\n$CPURAM\n$OUTPUT' | ./deploy.sh 2>&1
-    "
+    gcloud cloud-shell ssh --authorize-session --command="curl -sL https://raw.githubusercontent.com/qkc404/gcp/main/deploy.sh -o deploy.sh && chmod +x deploy.sh && echo -e '$SNAME\n$CPURAM\n$OUTPUT' | ./deploy.sh 2>&1" || true
     
     echo -e "${BOLD}${CYAN}=========================================${RESET}"
     echo -e "${GREEN}[OK]${RESET} Deployment complete."
@@ -338,7 +278,6 @@ custom_deploy() {
 }
 
 full_setup() {
-    install_dependencies
     install_gcloud
     authenticate
     set_project
@@ -348,6 +287,10 @@ full_setup() {
     echo ""
     read -p "Press Enter to return..."
 }
+
+# ==============================================
+#        MAIN MENU
+# ==============================================
 
 main_menu() {
     while true; do
@@ -377,35 +320,14 @@ main_menu() {
     done
 }
 
-# Create gcp command alias
-setup_alias() {
-    mkdir -p ~/.termux/bin
-    cat > ~/.termux/bin/gcp <<'GCP_EOF'
-#!/data/data/com.termux/files/usr/bin/bash
-~/.termux-setup.sh
-GCP_EOF
-    chmod +x ~/.termux/bin/gcp
-    if ! grep -q ".termux/bin" ~/.bashrc; then
-        echo 'export PATH="$HOME/.termux/bin:$PATH"' >> ~/.bashrc
-    fi
-}
+# ==============================================
+#        SCRIPT ENTRY POINT
+# ==============================================
 
-# Main execution
-main() {
-    setup_alias
-    
-    # Check if first run
-    if [ ! -f ~/.termux/.gcp_configured ]; then
-        show_banner
-        echo -e "${YELLOW}[!]${RESET} First time setup detected."
-        echo -e "${CYAN}[*]${RESET} This will install all dependencies (3-5 minutes)."
-        echo ""
-        read -p "Press Enter to continue or Ctrl+C to cancel..."
-        full_setup
-        touch ~/.termux/.gcp_configured
-    fi
-    
-    main_menu
-}
+# Check activation on every run
+if ! check_activation; then
+    activate_script
+fi
 
-main
+# Launch main menu
+main_menu
