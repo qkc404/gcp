@@ -1,0 +1,254 @@
+clear
+echo ""
+echo "========================================="
+echo "   VLESS GCP DEPLOYER - TERMUX SETUP    "
+echo "   github.com/qkc404/prvtspyyy          "
+echo "========================================="
+echo ""
+echo "[*] This setup will take approximately 3-5 minutes."
+echo "[*] Please ensure stable internet connection."
+echo ""
+read -p "Press Enter to continue..." 
+
+# ----- STEP 1: UPDATE PACKAGES -----
+echo ""
+echo "[STEP 1/5] Updating Termux packages..."
+echo "            This will take approximately 30-60 seconds."
+echo ""
+pkg update -y > /dev/null 2>&1 &
+PID=$!
+SPINNER='|/-\'
+i=0
+while kill -0 $PID 2>/dev/null; do
+    printf "\r            Loading %s" "${SPINNER:i++%4:1}"
+    sleep 0.2
+done
+printf "\r            Done.                    \n"
+echo "[OK] Packages updated."
+pkg upgrade -y > /dev/null 2>&1
+
+# ----- STEP 2: INSTALL DEPENDENCIES -----
+echo ""
+echo "[STEP 2/5] Installing dependencies (python3, curl, openssh, wget, jq)..."
+echo "            This will take approximately 60-90 seconds."
+echo ""
+pkg install -y python3 openssh curl which wget jq > /dev/null 2>&1 &
+PID=$!
+i=0
+while kill -0 $PID 2>/dev/null; do
+    printf "\r            Loading %s" "${SPINNER:i++%4:1}"
+    sleep 0.2
+done
+printf "\r            Done.                    \n"
+echo "[OK] Dependencies installed."
+
+# ----- STEP 3: INSTALL GOOGLE CLOUD SDK -----
+echo ""
+echo "[STEP 3/5] Checking Google Cloud SDK..."
+if command -v gcloud &> /dev/null; then
+    echo "[OK] gcloud already installed."
+else
+    echo "            Installing Google Cloud SDK..."
+    echo "            This will take approximately 60-120 seconds."
+    echo ""
+    curl -o $PREFIX/bin/gcloud-install.sh https://sdk.cloud.google.com > /dev/null 2>&1
+    chmod +x $PREFIX/bin/gcloud-install.sh
+    $PREFIX/bin/gcloud-install.sh --install-dir=$PREFIX --disable-prompts > /dev/null 2>&1 &
+    PID=$!
+    i=0
+    while kill -0 $PID 2>/dev/null; do
+        printf "\r            Loading %s" "${SPINNER:i++%4:1}"
+        sleep 0.2
+    done
+    printf "\r            Done.                    \n"
+    rm $PREFIX/bin/gcloud-install.sh
+    echo 'export PATH="$PREFIX/google-cloud-sdk/bin:$PATH"' >> ~/.bashrc
+    echo 'export CLOUDSDK_PYTHON="$PREFIX/bin/python3"' >> ~/.bashrc
+    echo "[OK] Google Cloud SDK installed."
+fi
+
+# ----- STEP 4: CREATE DIRECTORY STRUCTURE -----
+echo ""
+echo "[STEP 4/5] Creating directory structure..."
+mkdir -p ~/.termux/bin
+echo "[OK] Directory created."
+
+# ----- STEP 5: CREATE MAIN DEPLOYMENT SCRIPT -----
+echo ""
+echo "[STEP 5/5] Creating deployment scripts..."
+cat > ~/.termux/bin/vless-deploy.sh <<'DEPLOY_EOF'
+#!/data/data/com.termux/files/usr/bin/bash
+set -e
+
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+RED='\033[0;31m'
+BOLD='\033[1m'
+RESET='\033[0m'
+
+clear
+echo -e "${BOLD}${CYAN}=========================================${RESET}"
+echo -e "${BOLD}${CYAN}   VLESS GCP DEPLOYER - TERMUX EDITION  ${RESET}"
+echo -e "${BOLD}${CYAN}   github.com/qkc404/prvtspyyy          ${RESET}"
+echo -e "${BOLD}${CYAN}=========================================${RESET}"
+echo ""
+
+install_deps() {
+    echo -e "${YELLOW}[*]${RESET} Updating packages..."
+    pkg update -y && pkg upgrade -y
+    echo -e "${YELLOW}[*]${RESET} Installing required packages..."
+    pkg install -y python3 openssh curl which wget jq
+    echo -e "${GREEN}[OK]${RESET} Dependencies installed."
+}
+
+install_gcloud() {
+    if command -v gcloud &> /dev/null; then
+        echo -e "${GREEN}[OK]${RESET} gcloud already installed."
+        return
+    fi
+    echo -e "${YELLOW}[*]${RESET} Installing Google Cloud SDK..."
+    curl -o $PREFIX/bin/gcloud-install.sh https://sdk.cloud.google.com
+    chmod +x $PREFIX/bin/gcloud-install.sh
+    $PREFIX/bin/gcloud-install.sh --install-dir=$PREFIX --disable-prompts
+    rm $PREFIX/bin/gcloud-install.sh
+    echo 'export PATH="$PREFIX/google-cloud-sdk/bin:$PATH"' >> ~/.bashrc
+    echo 'export CLOUDSDK_PYTHON="$PREFIX/bin/python3"' >> ~/.bashrc
+    source ~/.bashrc
+    echo -e "${GREEN}[OK]${RESET} Google Cloud SDK installed."
+}
+
+auth_gcloud() {
+    echo -e "${YELLOW}[*]${RESET} Starting authentication..."
+    echo -e "${CYAN}[!]${RESET} A URL will appear. Open it in your browser."
+    echo -e "${CYAN}[!]${RESET} Log in with your Qwiklabs Google account."
+    echo -e "${CYAN}[!]${RESET} Paste the verification code back here."
+    echo ""
+    gcloud auth login --no-launch-browser
+    echo -e "${GREEN}[OK]${RESET} Authentication complete."
+}
+
+set_project() {
+    echo ""
+    echo -e "${YELLOW}[?]${RESET} Enter the Qwiklabs Project ID:"
+    echo -e "${CYAN}    (Find this in the GCP Console URL or top bar)${RESET}"
+    read -p "Project ID: " PROJECT_ID
+    gcloud config set project "$PROJECT_ID"
+    echo -e "${GREEN}[OK]${RESET} Project set to: $PROJECT_ID"
+}
+
+deploy_vless() {
+    echo ""
+    echo -e "${YELLOW}[*]${RESET} Connecting to Cloud Shell..."
+    echo -e "${CYAN}[!]${RESET} Make sure you have already opened Cloud Shell in your browser at least once.${RESET}"
+    echo ""
+    read -p "Service name [default: prvtspyyy404]: " SNAME
+    SNAME="${SNAME:-prvtspyyy404}"
+    echo ""
+    echo -e "${CYAN}Select CPU/RAM:${RESET}"
+    echo "  [1] 1 vCPU, 1 GiB"
+    echo "  [2] 1 vCPU, 2 GiB"
+    echo "  [3] 2 vCPU, 2 GiB"
+    echo "  [4] 2 vCPU, 4 GiB (RECOMMENDED)"
+    echo "  [5] 4 vCPU, 4 GiB"
+    read -p "Choice [1-5]: " CPURAM
+    case $CPURAM in
+        1) CPU=1; MEM="1Gi" ;;
+        2) CPU=1; MEM="2Gi" ;;
+        3) CPU=2; MEM="2Gi" ;;
+        4) CPU=2; MEM="4Gi" ;;
+        5) CPU=4; MEM="4Gi" ;;
+        *) CPU=2; MEM="4Gi" ;;
+    esac
+    echo ""
+    echo -e "${CYAN}Select output:${RESET}"
+    echo "  [1] QR Code only"
+    echo "  [2] Ping Monitor only"
+    echo "  [3] Both (QR + Ping)"
+    echo "  [4] Exit"
+    read -p "Choice [1-4]: " OUTPUT
+    OUTPUT="${OUTPUT:-3}"
+    echo ""
+    echo -e "${YELLOW}[*]${RESET} Launching deployment in Cloud Shell..."
+    gcloud cloud-shell ssh --command="curl -sL https://raw.githubusercontent.com/qkc404/prvtspyyy/main/deploy.sh -o deploy.sh && chmod +x deploy.sh && echo -e '$SNAME\n$CPURAM\n$OUTPUT' | ./deploy.sh"
+    echo ""
+    echo -e "${GREEN}[OK]${RESET} Deployment initiated. Check Cloud Shell for live output."
+}
+
+quick_deploy() {
+    echo ""
+    echo -e "${YELLOW}[*]${RESET} Quick Deploy with default settings..."
+    echo -e "${CYAN}    Service: prvtspyyy404 | CPU: 2 vCPU | RAM: 4 GiB | Output: Both${RESET}"
+    echo ""
+    gcloud cloud-shell ssh --command="curl -sL https://raw.githubusercontent.com/qkc404/prvtspyyy/main/deploy.sh -o deploy.sh && chmod +x deploy.sh && echo -e 'prvtspyyy404\n4\n3' | ./deploy.sh"
+    echo ""
+    echo -e "${GREEN}[OK]${RESET} Deployment initiated. Check Cloud Shell for live output."
+}
+
+main_menu() {
+    echo ""
+    echo -e "${BOLD}${CYAN}=========================================${RESET}"
+    echo -e "${BOLD}${CYAN}              MAIN MENU                 ${RESET}"
+    echo -e "${BOLD}${CYAN}=========================================${RESET}"
+    echo ""
+    echo -e "  ${BOLD}[1]${RESET} Install/Update Dependencies"
+    echo -e "  ${BOLD}[2]${RESET} Authenticate with Google"
+    echo -e "  ${BOLD}[3]${RESET} Set Qwiklabs Project ID"
+    echo -e "  ${BOLD}[4]${RESET} Deploy VLESS (Custom Settings)"
+    echo -e "  ${BOLD}[5]${RESET} Quick Deploy (All Defaults)"
+    echo -e "  ${BOLD}[6]${RESET} Full Setup (Runs 1-2-3-5)"
+    echo -e "  ${BOLD}[7]${RESET} Exit"
+    echo ""
+    read -p "Select option [1-7]: " CHOICE
+    
+    case $CHOICE in
+        1) install_deps; install_gcloud; main_menu ;;
+        2) auth_gcloud; main_menu ;;
+        3) set_project; main_menu ;;
+        4) deploy_vless; main_menu ;;
+        5) quick_deploy; main_menu ;;
+        6) 
+            install_deps
+            install_gcloud
+            auth_gcloud
+            set_project
+            quick_deploy
+            ;;
+        7) echo -e "${GREEN}Goodbye.${RESET}"; exit 0 ;;
+        *) echo -e "${RED}Invalid choice.${RESET}"; main_menu ;;
+    esac
+}
+
+main_menu
+DEPLOY_EOF
+
+# Create the gcp command wrapper
+cat > ~/.termux/bin/gcp <<'GCP_EOF'
+#!/data/data/com.termux/files/usr/bin/bash
+~/.termux/bin/vless-deploy.sh
+GCP_EOF
+
+chmod +x ~/.termux/bin/vless-deploy.sh
+chmod +x ~/.termux/bin/gcp
+
+if ! grep -q ".termux/bin" ~/.bashrc; then
+    echo 'export PATH="$HOME/.termux/bin:$PATH"' >> ~/.bashrc
+fi
+
+echo "[OK] Deployment scripts created."
+echo ""
+
+# ----- SETUP COMPLETE -----
+echo "========================================="
+echo "           SETUP COMPLETE!               "
+echo "========================================="
+echo ""
+echo "Type 'gcp' to launch the deployment menu."
+echo ""
+echo "First time users:"
+echo "  1. Type 'gcp' and press Enter"
+echo "  2. Select option [2] to authenticate"
+echo "  3. Select option [3] to set Project ID"
+echo "  4. Select option [5] for Quick Deploy"
+echo ""
+echo "========================================="
