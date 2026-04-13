@@ -136,6 +136,8 @@ install_dependencies() {
     echo -e "${YELLOW}[*]${RESET} Installing dependencies..."
     pkg update -y > /dev/null 2>&1
     pkg upgrade -y > /dev/null 2>&1
+    pkg install -y wget > /dev/null 2>&1
+    pkg install -y curl > /dev/null 2>&1
     pkg install -y python openssh curl which wget jq python-pip qrencode > /dev/null 2>&1 &
     spinner $! "Installing packages"
     echo -e "${GREEN}[OK]${RESET} Dependencies installed."
