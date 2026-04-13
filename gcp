@@ -3,6 +3,83 @@ set -e
 
 # ==============================================
 #        VLESS GCP DEPLOYER - TERMUX AIO
+#        github.com/qkc404/gcp
+# ==============================================
+
+# --- Colors ---
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+RED='\033[0;31m'
+BOLD='\033[1m'
+WHITE='\033[1;37m'
+RESET='\033[0m'
+
+show_banner() {
+    clear
+    echo -e "${BOLD}${CYAN}=========================================${RESET}"
+    echo -e "${BOLD}${CYAN}   VLESS GCP DEPLOYER - TERMUX VER.      ${RESET}"
+    echo -e "${BOLD}${CYAN}       TERMUX GOOGLE DEPLOYER            ${RESET}"
+    echo -e "${BOLD}${CYAN}=========================================${RESET}"
+    echo ""
+}
+
+# ==============================================
+#        ONE-TIME ACTIVATION BLOCK
+# ==============================================
+ACTIVATION_FILE="$HOME/.termux/.gcp_activated"
+VALID_TOKEN="chk_101"
+
+check_activation() {
+    if [ -f "$ACTIVATION_FILE" ]; then
+        return 0
+    fi
+    return 1
+}
+
+activate_script() {
+    clear
+    echo -e "${BOLD}${CYAN}=========================================${RESET}"
+    echo -e "${BOLD}${CYAN}   VLESS GCP DEPLOYER - ACTIVATION      ${RESET}"
+    echo -e "${BOLD}${CYAN}=========================================${RESET}"
+    echo ""
+    echo -e "${WHITE}This script requires a one-time activation code.${RESET}"
+    echo -e "${WHITE}Enter the code provided to you to continue.${RESET}"
+    echo ""
+    
+    local attempts=0
+    local max_attempts=5
+    
+    while [ $attempts -lt $max_attempts ]; do
+        read -p "$(echo -e "${CYAN}[?]${RESET} Activation Code: ")" USER_TOKEN
+        
+        if [ "$USER_TOKEN" = "$VALID_TOKEN" ]; then
+            echo ""
+            echo -e "${GREEN}[OK]${RESET} Activation successful!"
+            mkdir -p "$HOME/.termux"
+            echo "activated_on=$(date)" > "$ACTIVATION_FILE"
+            echo "token=$VALID_TOKEN" >> "$ACTIVATION_FILE"
+            sleep 1
+            return 0
+        else
+            attempts=$((attempts + 1))
+            remaining=$((max_attempts - attempts))
+            echo -e "${RED}[ERROR]${RESET} Invalid code. ${remaining} attempt(s) remaining."
+            echo ""
+        fi
+    done
+    
+    echo -e "${RED}[ERROR]${RESET} Maximum attempts exceeded."
+    echo -e "${YELLOW}[!]${RESET} Please contact the script provider for a valid activation code."
+    exit 1
+}
+
+if ! check_activation; then
+    activate_script
+fi
+
+# ==============================================
+#        VLESS GCP DEPLOYER - TERMUX AIO
 #        github.com/qkc404/gcp-full
 # ==============================================
 
