@@ -173,7 +173,8 @@ install_gcloud() {
     echo -e "${GREEN}[OK]${RESET} Google Cloud SDK installed."
     echo ""
     read -p "Press Enter to return..."
-}
+
+fi
     
     echo -e "${YELLOW}[*]${RESET} Starting authentication..."
     echo -e "${CYAN}[!]${RESET} A URL will appear. Open it in your browser."
