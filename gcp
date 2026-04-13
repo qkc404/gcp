@@ -79,8 +79,8 @@ if ! check_activation; then
 fi
 
 # ==============================================
-#        VLESS GCP DEPLOYER - TERMUX AIO
-#        github.com/qkc404/gcp-full
+#        VLESS GCP DEPLOYER - TERMUX VER.
+#            TERMUX GOOGLE DEPLOYER           
 # ==============================================
 
 # --- Colors ---
@@ -94,8 +94,8 @@ RESET='\033[0m'
 show_banner() {
     clear
     echo -e "${BOLD}${CYAN}=========================================${RESET}"
-    echo -e "${BOLD}${CYAN}   VLESS GCP DEPLOYER - TERMUX AIO      ${RESET}"
-    echo -e "${BOLD}${CYAN}   github.com/qkc404/gcp-full           ${RESET}"
+    echo -e "${BOLD}${CYAN}   VLESS GCP DEPLOYER - TERMUX VER.       ${RESET}"
+    echo -e "${BOLD}${CYAN}        TERMUX GOOGLE DEPLOYER           ${RESET}"
     echo -e "${BOLD}${CYAN}=========================================${RESET}"
     echo ""
 }
