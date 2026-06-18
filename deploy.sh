@@ -76,7 +76,7 @@ gcloud run deploy "$SERVICE_NAME" \
   --no-cpu-throttling \
   --timeout 3600 \
   --min-instances 1 \
-  --max-instances 5 \
+  --max-instances 4 \
   --allow-unauthenticated \
   --quiet > deploy.log 2>&1
 
@@ -91,7 +91,7 @@ CLEAN_HOST=$(echo "$SERVICE_URL" | sed 's|https://||')
 
 UUID="saeka"
 
-echo -e "\n${GREEN}🚀 INFRASTRUCTURE COMPILING SUCCESSFUL! RAW EXPORT LINKS:${RESET}"
+echo -e "\n${GREEN} (⁠｡⁠•̀⁠ᴗ⁠-⁠)⁠✧ INFRASTRUCTURE COMPILING SUCCESSFUL! RAW EXPORT LINKS:${RESET}"
 echo -e "${BLUE}────────────────────────────────────────────────────${RESET}"
 echo -e "${YELLOW}WebSocket (WS):${RESET}\nvless://${UUID}@${SERVICE_URL}:443?encryption=none&security=tls&sni=${SERVICE_URL}&type=ws&path=%2Fvless-saeka-ws#SAEKA-ENVOY-WS\n"
 echo -e "${YELLOW}HTTPUpgrade (HU):${RESET}\nvless://${UUID}@${SERVICE_URL}:443?encryption=none&security=tls&sni=${SERVICE_URL}&type=httpupgrade&path=%2Fvless-saeka-hu#SAEKA-ENVOY-HU\n"
