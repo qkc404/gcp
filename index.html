@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAEKA ENVOY VLESS HUB</title>
+    <style>
+        :root {
+            --bg-main: #060913;
+            --bg-card: #0f172a;
+            --accent: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.25);
+            --text-main: #f8fafc;
+            --text-muted: #64748b;
+            --border: #1e293b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-main); padding: 2.5rem 1rem; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 900px; }
+        header { text-align: center; margin-bottom: 3rem; }
+        h1 { font-size: 2.5rem; color: var(--accent); text-shadow: 0 0 20px var(--accent-glow); margin-bottom: 0.5rem; font-weight: 800; }
+        p.subtitle { color: var(--text-muted); font-size: 1rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; width: 100%; margin-top: 2rem; }
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .badge { background: rgba(56, 189, 248, 0.1); color: var(--accent); font-weight: 700; font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; }
+        .card-title { font-size: 1.2rem; font-weight: 700; }
+        .config-box { background: #020617; border: 1px solid #1e293b; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 0.8rem; color: #94a3b8; word-break: break-all; max-height: 80px; overflow-y: auto; margin-bottom: 1rem; }
+        .btn { background: var(--accent); color: #0f172a; border: none; padding: 12px; border-radius: 6px; font-weight: 700; cursor: pointer; width: 100%; text-transform: uppercase; font-size: 0.85rem; }
+        .btn:hover { background: #7dd3fc; }
+        .toast { position: fixed; bottom: 20px; background: #0ea5e9; color: #fff; padding: 10px 20px; border-radius: 4px; display: none; font-weight: 600; }
+        .toast.show { display: block; animation: fadeIn 0.3s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SAEKA ENVOY NODE MATRIX</h1>
+            <p class="subtitle">Multiplexed Serverless Edge Configuration Cluster</p>
+        </header>
+
+        <div class="grid">
+            <div class="card" data-search="ws websocket vless">
+                <div class="card-header"><span class="card-title">VLESS WebSocket</span><span class="badge">Active</span></div>
+                <div class="config-box" id="wsConfig">Computing endpoints...</div>
+                <button class="btn" onclick="copyConfig('wsConfig')">Copy WS Config</button>
+            </div>
+            <div class="card" data-search="hu httpupgrade vless">
+                <div class="card-header"><span class="card-title">VLESS HTTPUpgrade</span><span class="badge">Active</span></div>
+                <div class="config-box" id="huConfig">Computing endpoints...</div>
+                <button class="btn" onclick="copyConfig('huConfig')">Copy HU Config</button>
+            </div>
+            <div class="card" data-search="grpc transport vless">
+                <div class="card-header"><span class="card-title">VLESS gRPC Multiplex</span><span class="badge">Active</span></div>
+                <div class="config-box" id="grpcConfig">Computing endpoints...</div>
+                <button class="btn" onclick="copyConfig('grpcConfig')">Copy gRPC Config</button>
+            </div>
+            <div class="card" data-search="xhttp stream vless">
+                <div class="card-header"><span class="card-title">VLESS xhttp Stream</span><span class="badge">Active</span></div>
+                <div class="config-box" id="xhttpConfig">Computing endpoints...</div>
+                <button class="btn" onclick="copyConfig('xhttpConfig')">Copy xhttp Config</button>
+            </div>
+        </div>
+    </div>
+    <div class="toast" id="toast">Configuration copied to clipboard successfully!</div>
+
+    <script>
+        const currentHost = window.location.hostname;
+        const uuid = "saeka";
+        
+        const links = {
+            wsConfig: `vless://${uuid}@${currentHost}:443?encryption=none&security=tls&sni=${currentHost}&type=ws&path=%2Fvless-saeka-ws#SAEKA-ENVOY-WS`,
+            huConfig: `vless://${uuid}@${currentHost}:443?encryption=none&security=tls&sni=${currentHost}&type=httpupgrade&path=%2Fvless-saeka-hu#SAEKA-ENVOY-HU`,
+            grpcConfig: `vless://${uuid}@${currentHost}:443?encryption=none&security=tls&sni=${currentHost}&type=grpc&serviceName=vless-saeka-grpc#SAEKA-ENVOY-gRPC`,
+            xhttpConfig: `vless://${uuid}@${currentHost}:443?encryption=none&security=tls&sni=${currentHost}&type=xhttp&path=%2Fvless-saeka-xhttp#SAEKA-ENVOY-XHTTP`
+        };
+
+        document.getElementById('wsConfig').innerText = links.wsConfig;
+        document.getElementById('huConfig').innerText = links.huConfig;
+        document.getElementById('grpcConfig').innerText = links.grpcConfig;
+        document.getElementById('xhttpConfig').innerText = links.xhttpConfig;
+
+        function copyConfig(keyId) {
+            navigator.clipboard.writeText(links[keyId]).then(() => {
+                const notice = document.getElementById('toast');
+                notice.classList.add('show');
+                setTimeout(() => { notice.classList.remove('show'); }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
