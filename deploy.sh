@@ -86,7 +86,9 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-SERVICE_URL=$(gcloud run services describe "$SERVICE_NAME" --platform managed --region "$SELECTED_REGION" --format="value(status.url)" | sed 's/https:\/\///g')
+SERVICE_URL=$(gcloud run services describe "$SERVICE_NAME" --region us-central1 --project=$PROJECT_ID --format='value(status.url)' 2>/dev/null)
+CLEAN_HOST=$(echo "$SERVICE_URL" | sed 's|https://||')
+
 UUID="saeka"
 
 echo -e "\n${GREEN}🚀 INFRASTRUCTURE COMPILING SUCCESSFUL! RAW EXPORT LINKS:${RESET}"
