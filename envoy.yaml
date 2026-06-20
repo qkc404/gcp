@@ -1,6 +1,6 @@
 static_resources:
   listeners:
-  - name: ingress_listener
+  - name: ingress_8080
     address:
       socket_address:
         address: 0.0.0.0
@@ -12,149 +12,194 @@ static_resources:
           "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
           stat_prefix: ingress_http
           codec_type: AUTO
+          common_http_protocol_options:
+            idle_timeout: 3600s
+            headers_with_underscores_action: ALLOW
+          http_protocol_options:
+            accept_http_10: true
           route_config:
             name: local_route
             virtual_hosts:
             - name: local_service
               domains: ["*"]
               routes:
-              # Health Validation Endpoint (Instant Direct Response)
-              - match:
-                  path: "/health"
-                direct_response:
-                  status: 200
-                  body:
-                    inline_string: "OK\n"
-              # VLESS WebSocket Channel
-              - match:
-                  prefix: "/vless-saeka-ws"
-                route:
-                  cluster: xray_ws
-                  timeout: 0s
-                  idle_timeout: 0s
-              # VLESS HTTPUpgrade Channel
-              - match:
-                  prefix: "/vless-saeka-hu"
-                route:
-                  cluster: xray_hu
-                  timeout: 0s
-                  idle_timeout: 0s
-              # VLESS gRPC Multiplexing Path
-              - match:
-                  prefix: "/vless-saeka-grpc"
-                route:
-                  cluster: xray_grpc
-                  timeout: 0s
-                  idle_timeout: 0s
-                  max_stream_duration:
-                    grpc_max_stream_duration: 0s
-              # VLESS xhttp Streaming Path
-              - match:
-                  prefix: "/vless-saeka-xhttp"
-                route:
-                  cluster: xray_xhttp
-                  timeout: 0s
-                  idle_timeout: 0s
-              # Static Frontend Web Hub
-              - match:
-                  prefix: "/"
-                route:
-                  cluster: static_web
-                  timeout: 10s
+              # UI Landing Dashboard Engine
+              - match: { prefix: "/" }
+                route: { cluster: ui_backend, timeout: 0s }
+              # TROJAN Core Cluster Multiplexing
+              - match: { prefix: "/saeka-tojirp" }
+                route: { cluster: xray_trojan_ws, timeout: 0s }
+              - match: { prefix: "/saeka-tojirp-hu" }
+                route: { cluster: xray_trojan_hu, timeout: 0s }
+              - match: { prefix: "/saeka-tojirp-xh" }
+                route: { cluster: xray_trojan_xh, timeout: 0s }
+              # VMESS Core Cluster Multiplexing
+              - match: { prefix: "/vmess-saeka" }
+                route: { cluster: xray_vmess_ws, timeout: 0s }
+              - match: { prefix: "/vmess-saeka-hu" }
+                route: { cluster: xray_vmess_hu, timeout: 0s }
+              - match: { prefix: "/vmess-saeka-xh" }
+                route: { cluster: xray_vmess_xh, timeout: 0s }
+              # VLESS Core Cluster Multiplexing
+              - match: { prefix: "/vless-saeka" }
+                route: { cluster: xray_vless_ws, timeout: 0s }
+              - match: { prefix: "/vless-saeka-hu" }
+                route: { cluster: xray_vless_hu, timeout: 0s }
+              - match: { prefix: "/vless-saeka-xh" }
+                route: { cluster: xray_vless_xh, timeout: 0s }
+              # SHADOWSOCKS Core Cluster Multiplexing
+              - match: { prefix: "/ss-saeka" }
+                route: { cluster: xray_ss_ws, timeout: 0s }
+              - match: { prefix: "/ss-saeka-hu" }
+                route: { cluster: xray_ss_hu, timeout: 0s }
+              - match: { prefix: "/ss-saeka-xh" }
+                route: { cluster: xray_ss_xh, timeout: 0s }
           http_filters:
           - name: envoy.filters.http.router
             typed_config:
               "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
           upgrade_configs:
           - upgrade_type: websocket
-          - upgrade_type: httpupgrade
-          - upgrade_type: xhttp
-          # Performance-Tuned Connection Windows to Lower Latency & Buffer Bloat
-          http2_protocol_options:
-            max_concurrent_streams: 1000
-            initial_stream_window_size: 6553600
-            initial_connection_window_size: 10485760
+          - upgrade_type: HTTPUpgrade
 
   clusters:
-  - name: xray_ws
-    connect_timeout: 0.5s
-    type: STRICT_DNS
+  - name: ui_backend
+    connect_timeout: 0.25s
+    type: LOGICAL_DNS
     dns_lookup_family: V4_ONLY
     lb_policy: ROUND_ROBIN
     load_assignment:
-      cluster_name: xray_ws
+      cluster_name: ui_backend
       endpoints:
       - lb_endpoints:
         - endpoint:
             address:
-              socket_address:
-                address: 127.0.0.1
-                port_value: 10000
+              socket_address: { address: 127.0.0.1, port_value: 9000 }
 
-  - name: xray_hu
+  # TROJAN Upstream Layers
+  - name: xray_trojan_ws
     connect_timeout: 0.5s
-    type: STRICT_DNS
-    dns_lookup_family: V4_ONLY
+    type: STATIC
     lb_policy: ROUND_ROBIN
     load_assignment:
-      cluster_name: xray_hu
+      cluster_name: xray_trojan_ws
       endpoints:
       - lb_endpoints:
         - endpoint:
-            address:
-              socket_address:
-                address: 127.0.0.1
-                port_value: 10001
+            address: { socket_address: { address: 127.0.0.1, port_value: 10000 } }
+  - name: xray_trojan_hu
+    connect_timeout: 0.5s
+    type: STATIC
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: xray_trojan_hu
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address: { socket_address: { address: 127.0.0.1, port_value: 10001 } }
+  - name: xray_trojan_xh
+    connect_timeout: 0.5s
+    type: STATIC
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: xray_trojan_xh
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address: { socket_address: { address: 127.0.0.1, port_value: 10002 } }
 
-  - name: xray_grpc
+  # VMESS Upstream Layers
+  - name: xray_vmess_ws
     connect_timeout: 0.5s
-    type: STRICT_DNS
-    dns_lookup_family: V4_ONLY
+    type: STATIC
     lb_policy: ROUND_ROBIN
-    typed_extension_protocol_options:
-      envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
-        "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
-        explicit_http_config:
-          http2_protocol_options:
-            max_concurrent_streams: 1000
-            initial_stream_window_size: 6553600
-            initial_connection_window_size: 10485760
     load_assignment:
-      cluster_name: xray_grpc
+      cluster_name: xray_vmess_ws
       endpoints:
       - lb_endpoints:
         - endpoint:
-            address:
-              socket_address:
-                address: 127.0.0.1
-                port_value: 10002
+            address: { socket_address: { address: 127.0.0.1, port_value: 10003 } }
+  - name: xray_vmess_hu
+    connect_timeout: 0.5s
+    type: STATIC
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: xray_vmess_hu
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address: { socket_address: { address: 127.0.0.1, port_value: 10004 } }
+  - name: xray_vmess_xh
+    connect_timeout: 0.5s
+    type: STATIC
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: xray_vmess_xh
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address: { socket_address: { address: 127.0.0.1, port_value: 10005 } }
 
-  - name: xray_xhttp
+  # VLESS Upstream Layers
+  - name: xray_vless_ws
     connect_timeout: 0.5s
-    type: STRICT_DNS
-    dns_lookup_family: V4_ONLY
+    type: STATIC
     lb_policy: ROUND_ROBIN
     load_assignment:
-      cluster_name: xray_xhttp
+      cluster_name: xray_vless_ws
       endpoints:
       - lb_endpoints:
         - endpoint:
-            address:
-              socket_address:
-                address: 127.0.0.1
-                port_value: 10003
+            address: { socket_address: { address: 127.0.0.1, port_value: 10006 } }
+  - name: xray_vless_hu
+    connect_timeout: 0.5s
+    type: STATIC
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: xray_vless_hu
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address: { socket_address: { address: 127.0.0.1, port_value: 10007 } }
+  - name: xray_vless_xh
+    connect_timeout: 0.5s
+    type: STATIC
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: xray_vless_xh
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address: { socket_address: { address: 127.0.0.1, port_value: 10008 } }
 
-  - name: static_web
+  # SHADOWSOCKS Upstream Layers
+  - name: xray_ss_ws
     connect_timeout: 0.5s
-    type: STRICT_DNS
-    dns_lookup_family: V4_ONLY
+    type: STATIC
     lb_policy: ROUND_ROBIN
     load_assignment:
-      cluster_name: static_web
+      cluster_name: xray_ss_ws
       endpoints:
       - lb_endpoints:
         - endpoint:
-            address:
-              socket_address:
-                address: 127.0.0.1
-                port_value: 8081
+            address: { socket_address: { address: 127.0.0.1, port_value: 10009 } }
+  - name: xray_ss_hu
+    connect_timeout: 0.5s
+    type: STATIC
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: xray_ss_hu
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address: { socket_address: { address: 127.0.0.1, port_value: 10010 } }
+  - name: xray_ss_xh
+    connect_timeout: 0.5s
+    type: STATIC
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: xray_ss_xh
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address: { socket_address: { address: 127.0.0.1, port_value: 10011 } }
