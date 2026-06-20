@@ -56,26 +56,29 @@ echo ""
 echo -e "  ${CYAN}➜ SELECTED PROFILE: ${GREEN}${MODE} (${CPU} vCPU / ${RAM})${RESET}"
 echo ""
 
-echo -e "  ${MAGENTA}▶ STAGE 1: COMPILING CONTAINER IMAGE VIA CLOUD BUILD${RESET}"
-gcloud builds submit --tag "gcr.io/${PROJECT_ID}/${SERVICE_NAME}" --project="$PROJECT_ID" --quiet
+echo -e "  ${MAGENTA}▶ STAGE 1: COMPILING CONTAINER IMAGE VIA CLOUD BUILD...${RESET}"
+# The > /dev/null 2>&1 swallows all logs, keeping the terminal clean
+gcloud builds submit --tag "gcr.io/${PROJECT_ID}/${SERVICE_NAME}" --project="$PROJECT_ID" --quiet > /dev/null 2>&1
+
 if [ $? -ne 0 ]; then 
-    echo -e "  ${RED}✖ BUILD FAILED. Check Cloud Build logs.${RESET}"
+    echo -e "  ${RED}✖ ERROR: BUILD FAILED. Run without redirection to debug.${RESET}"
     exit 1
 fi
 echo -e "  ${GREEN}✔ CONTAINER BUILD SUCCESSFUL${RESET}"
 echo ""
 
-echo -e "  ${MAGENTA}▶ STAGE 2: DEPLOYING TO GOOGLE CLOUD RUN (STANDARD H2O LAYER)${RESET}"
+echo -e "  ${MAGENTA}▶ STAGE 2: DEPLOYING TO GOOGLE CLOUD RUN (STANDARD H2O LAYER)...${RESET}"
+# Swallowing deployment logs for a seamless UI experience
 gcloud run deploy "$SERVICE_NAME" \
   --image "gcr.io/${PROJECT_ID}/${SERVICE_NAME}" \
   --platform managed --region us-central1 \
   --cpu "$CPU" --memory "$RAM" --port 8080 \
   --concurrency 1000 --cpu-boost \
   --timeout 3600 --min-instances 1 --max-instances "$MAX_INSTANCES" \
-  --allow-unauthenticated --project="$PROJECT_ID" --quiet
+  --allow-unauthenticated --project="$PROJECT_ID" --quiet > /dev/null 2>&1
 
 if [ $? -ne 0 ]; then 
-    echo -e "  ${RED}✖ DEPLOYMENT FAILED.${RESET}"
+    echo -e "  ${RED}✖ ERROR: DEPLOYMENT FAILED.${RESET}"
     exit 1
 fi
 
