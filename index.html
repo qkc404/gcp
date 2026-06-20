@@ -2,91 +2,1145 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAEKA ENVOY VLESS HUB</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>404 NOT FOUND GCP</title>
     <style>
         :root {
-            --bg-main: #060913;
-            --bg-card: #0f172a;
-            --accent: #38bdf8;
-            --accent-glow: rgba(56, 189, 248, 0.25);
-            --text-main: #f8fafc;
-            --text-muted: #64748b;
-            --border: #1e293b;
+            --bg: #121212;
+            --surface: #1e1e1e;
+            --surface2: #2a2a2a;
+            --border: #444;
+            --text: #f0f0f0;
+            --text-dim: #aaa;
+            --accent: #ffffff;
+            --glow: #ffffff;
+            --green: #2ed573;
+            --red: #ff4757;
+            --yellow: #ffa502;
+            --blue: #1e90ff;
+            --font-mono: 'Courier New', monospace;
+            --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-size-base: clamp(12px, 3.2vw, 15px);
+            --font-size-sm: clamp(10px, 2.8vw, 13px);
+            --font-size-lg: clamp(16px, 4.5vw, 20px);
+            --font-size-xl: clamp(24px, 7vw, 36px);
+            --font-size-xxl: clamp(36px, 10vw, 60px);
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-        body { background-color: var(--bg-main); color: var(--text-main); padding: 2.5rem 1rem; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .container { width: 100%; max-width: 900px; }
-        header { text-align: center; margin-bottom: 3rem; }
-        h1 { font-size: 2.5rem; color: var(--accent); text-shadow: 0 0 20px var(--accent-glow); margin-bottom: 0.5rem; font-weight: 800; }
-        p.subtitle { color: var(--text-muted); font-size: 1rem; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; width: 100%; margin-top: 2rem; }
-        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between; }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-        .badge { background: rgba(56, 189, 248, 0.1); color: var(--accent); font-weight: 700; font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; }
-        .card-title { font-size: 1.2rem; font-weight: 700; }
-        .config-box { background: #020617; border: 1px solid #1e293b; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 0.8rem; color: #94a3b8; word-break: break-all; max-height: 80px; overflow-y: auto; margin-bottom: 1rem; }
-        .btn { background: var(--accent); color: #0f172a; border: none; padding: 12px; border-radius: 6px; font-weight: 700; cursor: pointer; width: 100%; text-transform: uppercase; font-size: 0.85rem; }
-        .btn:hover { background: #7dd3fc; }
-        .toast { position: fixed; bottom: 20px; background: #0ea5e9; color: #fff; padding: 10px 20px; border-radius: 4px; display: none; font-weight: 600; }
-        .toast.show { display: block; animation: fadeIn 0.3s; }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-mono);
+            font-size: var(--font-size-base);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            padding: 16px 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 700px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes glowPulseStrong {
+            0%, 100% { text-shadow: 0 0 12px var(--glow), 0 0 24px var(--glow); }
+            50% { text-shadow: 0 0 6px var(--glow), 0 0 12px var(--glow); }
+        }
+
+        @keyframes glowPulseLight {
+            0%, 100% { text-shadow: 0 0 4px var(--glow); }
+            50% { text-shadow: 0 0 1px var(--glow); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes borderGlow {
+            0%, 100% { border-color: var(--border); }
+            50% { border-color: #666; }
+        }
+
+        .fade-in { animation: fadeInUp 0.5s ease-out forwards; }
+        .glow-text-strong { animation: glowPulseStrong 2.5s ease-in-out infinite; }
+        .glow-text-light { animation: glowPulseLight 3s ease-in-out infinite; }
+
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(18,18,18,0.96);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+
+        #loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-digits {
+            font-size: var(--font-size-xxl);
+            font-weight: 900;
+            font-family: var(--font-mono);
+            letter-spacing: 8px;
+            display: flex;
+            gap: 4px;
+            color: var(--text);
+        }
+
+        .loading-digits span {
+            transition: all 0.35s ease;
+            display: inline-block;
+        }
+
+        .loading-digits span.active {
+            animation: glowPulseStrong 0.7s ease-in-out infinite;
+            transform: scale(1.1);
+        }
+
+        .loading-digits span.inactive {
+            opacity: 0.08;
+            text-shadow: none;
+            transform: scale(0.9);
+        }
+
+        .loading-subtitle {
+            margin-top: 20px;
+            font-size: var(--font-size-sm);
+            color: #888;
+            letter-spacing: 2px;
+            animation: fadeIn 1s ease 2s forwards;
+            opacity: 0;
+        }
+
+        .section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            width: 100%;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: visible;
+        }
+
+        .section:hover {
+            border-color: #666;
+        }
+
+        .section-title {
+            font-weight: 700;
+            font-size: var(--font-size-lg);
+            text-align: center;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+            color: var(--text);
+        }
+
+        .section-subtitle {
+            font-size: var(--font-size-sm);
+            color: var(--text-dim);
+            text-align: center;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        .button-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            margin-top: 6px;
+        }
+
+        .btn {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 7px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: var(--font-size-sm);
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            max-width: 100%;
+            letter-spacing: 0.4px;
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .btn:hover {
+            border-color: #888;
+            background: #333;
+        }
+
+        .btn.active {
+            border-color: var(--accent);
+            background: #333;
+            box-shadow: 0 0 10px rgba(255,255,255,0.1);
+            font-weight: bold;
+        }
+
+        .ping-display {
+            text-align: center;
+            font-size: var(--font-size-sm);
+            color: var(--text-dim);
+            margin-top: 10px;
+            font-family: var(--font-mono);
+            min-height: 20px;
+        }
+
+        .speed-row {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-top: 10px;
+            gap: 10px;
+        }
+
+        .speed-item {
+            text-align: center;
+            flex: 1;
+        }
+
+        .speed-label {
+            font-size: var(--font-size-sm);
+            color: var(--text-dim);
+        }
+
+        .speed-value {
+            font-size: var(--font-size-lg);
+            font-weight: 700;
+        }
+
+        .speed-value.download { color: var(--green); }
+        .speed-value.upload { color: var(--blue); }
+        .speed-value.latency { color: var(--yellow); }
+
+        .graph-container {
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            height: 60px;
+            margin-top: 10px;
+            padding: 0 4px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 4px;
+        }
+
+        .graph-bar {
+            flex: 1;
+            background: linear-gradient(to top, var(--green), var(--blue));
+            border-radius: 2px;
+            transition: height 0.1s ease;
+            min-height: 2px;
+            max-height: 100%;
+        }
+
+        .config-wrapper {
+            position: relative;
+        }
+
+        .config-display {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px;
+            padding-top: 40px;
+            font-family: var(--font-mono);
+            font-size: var(--font-size-sm);
+            line-height: 1.7;
+            word-break: break-all;
+            white-space: pre-wrap;
+            color: var(--green);
+            min-height: 100px;
+            max-height: 280px;
+            overflow-y: auto;
+            -webkit-user-select: all;
+            user-select: all;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 14px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: var(--font-size-sm);
+            transition: all 0.2s ease;
+            z-index: 5;
+        }
+
+        .copy-btn:hover {
+            border-color: var(--accent);
+            background: #333;
+        }
+
+        .copy-btn.copied {
+            border-color: var(--green);
+            color: var(--green);
+            background: #0a1a0a;
+        }
+
+        .copy-btn.copied::after {
+            content: ' ✓';
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .status-dot.green {
+            background: var(--green);
+            box-shadow: 0 0 6px var(--green);
+        }
+
+        .status-dot.yellow {
+            background: var(--yellow);
+            box-shadow: 0 0 6px var(--yellow);
+            animation: pulse 1s infinite;
+        }
+
+        .status-dot.red {
+            background: var(--red);
+            box-shadow: 0 0 6px var(--red);
+        }
+
+        .footer {
+            text-align: center;
+            font-size: var(--font-size-sm);
+            padding: 8px;
+            opacity: 0.7;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+        }
+
+        .footer a {
+            color: var(--text-dim);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .footer a:hover {
+            color: var(--text);
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 8px 0;
+            opacity: 0.5;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+            font-size: var(--font-size-sm);
+        }
+
+        .info-label {
+            color: var(--text-dim);
+        }
+
+        .info-value {
+            color: var(--green);
+            font-weight: 700;
+        }
+
+        .dropdown-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: fixed;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 0;
+            z-index: 10000;
+            max-height: 220px;
+            overflow-y: auto;
+            width: calc(100% - 32px);
+            max-width: 668px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+        }
+
+        .dropdown-content.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: var(--font-size-sm);
+            color: var(--text);
+            transition: background 0.15s ease;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
+
+        .dropdown-item:hover {
+            background: #3a3a3a;
+        }
+
+        .dropdown-item.selected {
+            color: var(--green);
+            font-weight: bold;
+        }
+
+        .log-container {
+            background: #0a0a0a;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            max-height: 120px;
+            overflow-y: auto;
+            font-size: var(--font-size-sm);
+            color: var(--text-dim);
+            margin-top: 10px;
+        }
+
+        .log-entry {
+            padding: 2px 0;
+            border-bottom: 1px solid #222;
+            font-family: var(--font-mono);
+        }
+
+        .log-entry .time {
+            color: #666;
+            margin-right: 8px;
+        }
+
+        @media (max-width: 380px) {
+            .btn { font-size: 10px; padding: 5px 8px; }
+            .config-display { font-size: 10px; padding: 10px; padding-top: 34px; }
+            .copy-btn { top: 8px; right: 8px; font-size: 9px; padding: 3px 8px; }
+            .section { padding: 10px; }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>SAEKA ENVOY NODE MATRIX</h1>
-            <p class="subtitle">Multiplexed Serverless Edge Configuration Cluster</p>
-        </header>
 
-        <div class="grid">
-            <div class="card" data-search="ws websocket vless">
-                <div class="card-header"><span class="card-title">VLESS WebSocket</span><span class="badge">Active</span></div>
-                <div class="config-box" id="wsConfig">Computing endpoints...</div>
-                <button class="btn" onclick="copyConfig('wsConfig')">Copy WS Config</button>
-            </div>
-            <div class="card" data-search="hu httpupgrade vless">
-                <div class="card-header"><span class="card-title">VLESS HTTPUpgrade</span><span class="badge">Active</span></div>
-                <div class="config-box" id="huConfig">Computing endpoints...</div>
-                <button class="btn" onclick="copyConfig('huConfig')">Copy HU Config</button>
-            </div>
-            <div class="card" data-search="grpc transport vless">
-                <div class="card-header"><span class="card-title">VLESS gRPC Multiplex</span><span class="badge">Active</span></div>
-                <div class="config-box" id="grpcConfig">Computing endpoints...</div>
-                <button class="btn" onclick="copyConfig('grpcConfig')">Copy gRPC Config</button>
-            </div>
-            <div class="card" data-search="xhttp stream vless">
-                <div class="card-header"><span class="card-title">VLESS xhttp Stream</span><span class="badge">Active</span></div>
-                <div class="config-box" id="xhttpConfig">Computing endpoints...</div>
-                <button class="btn" onclick="copyConfig('xhttpConfig')">Copy xhttp Config</button>
-            </div>
+<div id="loading-screen">
+    <div class="loading-digits" id="loading-digits">
+        <span id="d4">4</span><span id="d0">0</span><span id="d4b">4</span>
+    </div>
+    <div class="loading-subtitle" id="loading-subtitle">INITIALIZING CONFIG PORTAL</div>
+</div>
+
+<div class="container" id="main-content" style="display:none;">
+    <div class="section fade-in">
+        <div class="section-title glow-text-strong" style="font-size:var(--font-size-xl); letter-spacing:3px;">404 NOT FOUND GCP</div>
+        <div class="section-subtitle">DEPLOYMENT CONFIGURATION PORTAL</div>
+        <hr class="divider">
+        <div class="info-row"><span class="info-label">HOST:</span><span class="info-value" id="info-host">---</span></div>
+        <div class="info-row"><span class="info-label">HOST IP:</span><span class="info-value" id="info-ip">---</span></div>
+        <div class="info-row"><span class="info-label">COUNTRY:</span><span class="info-value" id="info-country">---</span></div>
+        <div class="info-row"><span class="info-label">PASS / UUID:</span><span class="info-value">saeka</span></div>
+        <div class="info-row"><span class="info-label">VISITORS:</span><span class="info-value" id="visitor-count">0</span></div>
+        <div class="info-row"><span class="info-label">ACTIVE:</span><span class="info-value" id="active-users">0</span></div>
+        <div class="info-row"><span class="info-label">UPTIME:</span><span class="info-value" id="runtime-display">00:00:00</span></div>
+    </div>
+
+    <div class="section fade-in">
+        <div class="section-title" style="font-size:var(--font-size-sm);color:var(--text-dim);">ADDRESS SELECTOR</div>
+        <div class="section-subtitle">CHOOSE SERVER ADDRESS</div>
+        <div class="dropdown-wrapper">
+            <button class="btn" id="address-dropdown-btn" style="width:100%; text-align:center;">SELECT ADDRESS ▾</button>
+            <div class="dropdown-content" id="address-dropdown"></div>
+        </div>
+        <div id="address-selected" style="text-align:center; margin-top:6px; font-size:var(--font-size-sm); color:var(--green); word-break: break-all;"></div>
+    </div>
+
+    <div class="section fade-in">
+        <div class="section-title" style="font-size:var(--font-size-sm);color:var(--text-dim);">SNI SELECTOR</div>
+        <div class="section-subtitle">CHOOSE TLS SNI</div>
+        <div class="dropdown-wrapper">
+            <button class="btn" id="sni-dropdown-btn" style="width:100%; text-align:center;">SELECT SNI ▾</button>
+            <div class="dropdown-content" id="sni-dropdown"></div>
+        </div>
+        <div id="sni-selected" style="text-align:center; margin-top:6px; font-size:var(--font-size-sm); color:var(--green); word-break: break-all;"></div>
+        <div class="ping-display" id="ping-display" style="margin-top:8px;">
+            <span class="status-dot yellow"></span> SELECT BOTH TO PING
         </div>
     </div>
-    <div class="toast" id="toast">Configuration copied to clipboard successfully!</div>
 
-    <script>
-        const currentHost = window.location.hostname;
-        const uuid = "saeka";
+    <div class="section fade-in">
+        <div class="section-title" style="font-size:var(--font-size-sm);color:var(--text-dim);">REAL-TIME MONITOR</div>
+        <div class="speed-row">
+            <div class="speed-item">
+                <div class="speed-label">DOWNLOAD</div>
+                <div class="speed-value download" id="speed-download">0</div>
+                <div class="speed-label"><span id="speed-download-unit">KB/s</span></div>
+            </div>
+            <div class="speed-item">
+                <div class="speed-label">UPLOAD</div>
+                <div class="speed-value upload" id="speed-upload">0</div>
+                <div class="speed-label"><span id="speed-upload-unit">KB/s</span></div>
+            </div>
+            <div class="speed-item">
+                <div class="speed-label">LATENCY</div>
+                <div class="speed-value latency" id="speed-latency">0</div>
+                <div class="speed-label">ms</div>
+            </div>
+        </div>
+        <div class="graph-container" id="graph-container"></div>
+        <div class="log-container" id="log-container">
+            <div class="log-entry"><span class="time">--:--:--</span> System ready.</div>
+        </div>
+    </div>
+
+    <div class="section fade-in">
+        <div class="section-title" style="font-size:var(--font-size-sm);color:var(--text-dim);">PROTOCOL SELECTOR</div>
+        <div class="section-subtitle">CHOOSE TUNNEL PROTOCOL</div>
+        <div class="button-bar" id="protocol-bar"></div>
+    </div>
+
+    <div class="section fade-in">
+        <div class="section-title" style="font-size:var(--font-size-sm);color:var(--text-dim);">TRANSPORT SELECTOR</div>
+        <div class="section-subtitle">CHOOSE TRANSPORT MODE</div>
+        <div class="button-bar" id="transport-bar"></div>
+    </div>
+
+    <div class="section fade-in">
+        <div class="section-title" style="font-size:var(--font-size-sm);color:var(--text-dim);">CONFIG OUTPUT</div>
+        <div class="section-subtitle">COPY AND IMPORT TO YOUR VPN CLIENT</div>
+        <div class="config-wrapper">
+            <button class="copy-btn" id="copy-btn">COPY</button>
+            <div class="config-display" id="config-display"></div>
+        </div>
+    </div>
+
+    <div class="footer fade-in glow-text-light">
+        CREATED BY <a href="https://fb.com/saekacutiee" target="_blank">SAEKA TOJIRP</a> &middot; 404 NOT FOUND GCP &middot; v4.0
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    const GLOBAL_SERVER_START_TIME = Math.floor(Date.now() / 1000);
+    
+    const PASS = 'saeka';
+    const ADDRESSES = [
+        'run.googleapis.com',
+        'cloud.google.com',
+        'googleapis.com',
+        'firebase.google.com',
+        'storage.googleapis.com',
+        'fonts.googleapis.com',
+        'ajax.googleapis.com',
+        'maps.googleapis.com',
+        'oauth2.googleapis.com',
+        'www.googleapis.com'
+    ];
+    const SNI_LIST = [
+        'fcmtoken.googleapis.com',
+        'support.maya.ph',
+        'api.paymaya.com',
+        'www.maya.ph',
+        'mayabank.ph',
+        'firebase-settings.crashlytics.com',
+        'app-analytics-services.com',
+        'saeka-tojirp.googleapis.com'
+    ];
+    const PROTOCOLS = ['vless', 'trojan', 'vmess', 'ss'];
+    const PROTOCOL_LABELS = {
+        vless: 'VLESS',
+        trojan: 'TROJAN',
+        vmess: 'VMESS',
+        ss: 'SHADOWSOCKS'
+    };
+    const PATHS = {
+        trojan: '/saeka-tojirp',
+        vmess: '/vmess-saeka',
+        vless: '/vless-saeka',
+        ss: '/ss-saeka'
+    };
+    const TRANSPORTS = ['ws', 'hu', 'xh'];
+    const TRANSPORT_LABELS = {
+        ws: 'WebSocket',
+        hu: 'HTTP Upgrade',
+        xh: 'XHTTP'
+    };
+
+    let selectedAddress = ADDRESSES[0];
+    let selectedSNI = SNI_LIST[0];
+    let selectedProtocol = 'vless';
+    let selectedTransport = 'ws';
+    const currentHost = window.location.hostname || 'localhost';
+    const pingCache = {};
+    let pingInProgress = false;
+
+    let totalDataSent = 0;
+    let totalDataReceived = 0;
+    let lastUpdateTime = Date.now();
+    let currentDownloadSpeed = 0;
+    let currentUploadSpeed = 0;
+    
+    const speedHistory = [];
+
+    let visitorCount = 0;
+    let activeUsers = 0;
+
+    const infoHost = document.getElementById('info-host');
+    const infoIp = document.getElementById('info-ip');
+    const infoCountry = document.getElementById('info-country');
+    const visitorCountEl = document.getElementById('visitor-count');
+    const activeUsersEl = document.getElementById('active-users');
+    const runtimeDisplay = document.getElementById('runtime-display');
+    const addressDropdownBtn = document.getElementById('address-dropdown-btn');
+    const addressDropdown = document.getElementById('address-dropdown');
+    const addressSelected = document.getElementById('address-selected');
+    const sniDropdownBtn = document.getElementById('sni-dropdown-btn');
+    const sniDropdown = document.getElementById('sni-dropdown');
+    const sniSelected = document.getElementById('sni-selected');
+    const protocolBar = document.getElementById('protocol-bar');
+    const transportBar = document.getElementById('transport-bar');
+    const pingDisplay = document.getElementById('ping-display');
+    const configDisplay = document.getElementById('config-display');
+    const copyBtn = document.getElementById('copy-btn');
+    const speedDownload = document.getElementById('speed-download');
+    const speedUpload = document.getElementById('speed-upload');
+    const speedLatency = document.getElementById('speed-latency');
+    const speedDownloadUnit = document.getElementById('speed-download-unit');
+    const speedUploadUnit = document.getElementById('speed-upload-unit');
+    const graphContainer = document.getElementById('graph-container');
+    const logContainer = document.getElementById('log-container');
+    const loadingScreen = document.getElementById('loading-screen');
+    const mainContent = document.getElementById('main-content');
+    const d4 = document.getElementById('d4');
+    const d0 = document.getElementById('d0');
+    const d4b = document.getElementById('d4b');
+
+    function addLog(message) {
+        const now = new Date();
+        const time = now.toTimeString().split(' ')[0];
+        const entry = document.createElement('div');
+        entry.className = 'log-entry';
+        entry.innerHTML = '<span class="time">' + time + '</span> ' + message;
+        logContainer.appendChild(entry);
+        logContainer.scrollTop = logContainer.scrollHeight;
+        while (logContainer.children.length > 20) {
+            logContainer.removeChild(logContainer.firstChild);
+        }
+    }
+
+    function initializeSharedStats() {
+        try {
+            const stored = JSON.parse(localStorage.getItem('saeka_portal_stats') || '{}');
+            visitorCount = (stored.visitors || 0) + 1;
+            activeUsers = Math.max((stored.activeUsers || 1), Math.floor(Math.random() * 50) + 1);
+            
+            localStorage.setItem('saeka_portal_stats', JSON.stringify({
+                visitors: visitorCount,
+                activeUsers: activeUsers,
+                lastUpdate: Date.now()
+            }));
+        } catch (e) {
+            visitorCount = 1;
+            activeUsers = Math.floor(Math.random() * 50) + 1;
+        }
         
-        const links = {
-            wsConfig: `vless://${uuid}@${currentHost}:443?encryption=none&security=tls&sni=${currentHost}&type=ws&path=%2Fvless-saeka-ws#SAEKA-ENVOY-WS`,
-            huConfig: `vless://${uuid}@${currentHost}:443?encryption=none&security=tls&sni=${currentHost}&type=httpupgrade&path=%2Fvless-saeka-hu#SAEKA-ENVOY-HU`,
-            grpcConfig: `vless://${uuid}@${currentHost}:443?encryption=none&security=tls&sni=${currentHost}&type=grpc&serviceName=vless-saeka-grpc#SAEKA-ENVOY-gRPC`,
-            xhttpConfig: `vless://${uuid}@${currentHost}:443?encryption=none&security=tls&sni=${currentHost}&type=xhttp&path=%2Fvless-saeka-xhttp#SAEKA-ENVOY-XHTTP`
+        visitorCountEl.textContent = visitorCount;
+        activeUsersEl.textContent = activeUsers;
+    }
+
+    infoHost.textContent = currentHost;
+
+    fetch('https://ipapi.co/json/')
+        .then(response => response.json())
+        .then(data => {
+            infoIp.textContent = data.ip || '---';
+            infoCountry.textContent = (data.country_name || '---') + ' ' + (data.flag?.emoji || '');
+            addLog('IP location: ' + data.country_name);
+        })
+        .catch(() => {
+            infoIp.textContent = '---';
+            infoCountry.textContent = '---';
+            addLog('IP fetch failed (local)');
+        });
+
+    initializeSharedStats();
+
+    function updateRuntime() {
+        const currentTime = Math.floor(Date.now() / 1000);
+        const diffSec = currentTime - GLOBAL_SERVER_START_TIME;
+        
+        const days = Math.floor(diffSec / 86400);
+        const hours = Math.floor((diffSec % 86400) / 3600);
+        const minutes = Math.floor((diffSec % 3600) / 60);
+        const seconds = diffSec % 60;
+        
+        let runtimeStr = '';
+        if (days > 0) runtimeStr += days + 'D ';
+        runtimeStr += String(hours).padStart(2, '0') + ':' +
+                      String(minutes).padStart(2, '0') + ':' +
+                      String(seconds).padStart(2, '0');
+        runtimeDisplay.textContent = runtimeStr;
+    }
+    
+    updateRuntime();
+    setInterval(updateRuntime, 1000);
+
+    function simulateNetworkActivity() {
+        const now = Date.now();
+        const timeDiff = (now - lastUpdateTime) / 1000;
+        
+        if (timeDiff >= 0.5) {
+            const baseDownload = Math.random() * 800 + 200;
+            const baseUpload = Math.random() * 300 + 100;
+            
+            const variance = 0.8 + Math.random() * 0.4;
+            currentDownloadSpeed = Math.floor(baseDownload * variance);
+            currentUploadSpeed = Math.floor(baseUpload * variance);
+            
+            totalDataReceived += (currentDownloadSpeed * timeDiff) / 1000;
+            totalDataSent += (currentUploadSpeed * timeDiff) / 1000;
+            
+            let dlDisplay, dlUnit;
+            if (currentDownloadSpeed >= 1024) {
+                dlDisplay = (currentDownloadSpeed / 1024).toFixed(2);
+                dlUnit = 'MB/s';
+            } else {
+                dlDisplay = currentDownloadSpeed.toFixed(1);
+                dlUnit = 'KB/s';
+            }
+            speedDownload.textContent = dlDisplay;
+            speedDownloadUnit.textContent = dlUnit;
+            
+            let ulDisplay, ulUnit;
+            if (currentUploadSpeed >= 1024) {
+                ulDisplay = (currentUploadSpeed / 1024).toFixed(2);
+                ulUnit = 'MB/s';
+            } else {
+                ulDisplay = currentUploadSpeed.toFixed(1);
+                ulUnit = 'KB/s';
+            }
+            speedUpload.textContent = ulDisplay;
+            speedUploadUnit.textContent = ulUnit;
+            
+            const latency = Math.floor(Math.random() * 100 + 10);
+            speedLatency.textContent = latency;
+            
+            speedHistory.push(currentDownloadSpeed);
+            if (speedHistory.length > 30) {
+                speedHistory.shift();
+            }
+            
+            updateGraph();
+            lastUpdateTime = now;
+        }
+    }
+
+    function updateGraph() {
+        graphContainer.innerHTML = '';
+        
+        if (speedHistory.length === 0) {
+            for (let i = 0; i < 30; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'graph-bar';
+                bar.style.height = '5px';
+                graphContainer.appendChild(bar);
+            }
+            return;
+        }
+        
+        const maxSpeed = Math.max(...speedHistory, 1000);
+        
+        speedHistory.forEach(speed => {
+            const bar = document.createElement('div');
+            bar.className = 'graph-bar';
+            const percentage = (speed / maxSpeed) * 100;
+            bar.style.height = Math.max(5, percentage) + '%';
+            graphContainer.appendChild(bar);
+        });
+    }
+
+    setInterval(simulateNetworkActivity, 100);
+    simulateNetworkActivity();
+
+    function buildDropdown(container, items, selected, callback) {
+        container.innerHTML = '';
+        items.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'dropdown-item';
+            div.textContent = item;
+            if (item === selected) div.classList.add('selected');
+            div.addEventListener('click', (e) => {
+                e.stopPropagation();
+                callback(item);
+                container.classList.remove('show');
+                container.querySelectorAll('.dropdown-item').forEach(d => d.classList.remove('selected'));
+                div.classList.add('selected');
+            });
+            container.appendChild(div);
+        });
+    }
+
+    function positionDropdown(dropdown) {
+        const btn = dropdown.previousElementSibling;
+        if (!btn || !btn.classList.contains('btn')) return;
+        
+        const rect = btn.getBoundingClientRect();
+        dropdown.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+        dropdown.style.left = (rect.left + window.scrollX) + 'px';
+        dropdown.style.width = rect.width + 'px';
+    }
+
+    buildDropdown(addressDropdown, ADDRESSES, selectedAddress, (val) => {
+        if (!val || val.trim() === '') return;
+        selectedAddress = String(val).trim();
+        addressSelected.textContent = 'SELECTED: ' + selectedAddress;
+        addressDropdownBtn.textContent = selectedAddress + ' ▾';
+        updateConfigDisplay();
+        addLog('Address changed to ' + selectedAddress);
+        pingCombined();
+    });
+    addressDropdownBtn.textContent = String(selectedAddress).trim() + ' ▾';
+    addressSelected.textContent = 'SELECTED: ' + String(selectedAddress).trim();
+
+    buildDropdown(sniDropdown, SNI_LIST, selectedSNI, (val) => {
+        if (!val || val.trim() === '') return;
+        selectedSNI = String(val).trim();
+        sniSelected.textContent = 'SELECTED: ' + selectedSNI;
+        sniDropdownBtn.textContent = selectedSNI + ' ▾';
+        updateConfigDisplay();
+        addLog('SNI changed to ' + selectedSNI);
+        pingCombined();
+    });
+    sniDropdownBtn.textContent = String(selectedSNI).trim() + ' ▾';
+    sniSelected.textContent = 'SELECTED: ' + String(selectedSNI).trim();
+
+    addressDropdownBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const show = !addressDropdown.classList.contains('show');
+        addressDropdown.classList.toggle('show');
+        sniDropdown.classList.remove('show');
+        if (show) {
+            positionDropdown(addressDropdown);
+            addLog('Opened address dropdown');
+        }
+    });
+    
+    sniDropdownBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const show = !sniDropdown.classList.contains('show');
+        sniDropdown.classList.toggle('show');
+        addressDropdown.classList.remove('show');
+        if (show) {
+            positionDropdown(sniDropdown);
+            addLog('Opened SNI dropdown');
+        }
+    });
+    
+    window.addEventListener('scroll', () => {
+        if (addressDropdown.classList.contains('show')) {
+            positionDropdown(addressDropdown);
+        }
+        if (sniDropdown.classList.contains('show')) {
+            positionDropdown(sniDropdown);
+        }
+    });
+    
+    document.addEventListener('click', () => {
+        addressDropdown.classList.remove('show');
+        sniDropdown.classList.remove('show');
+    });
+
+    function pingCombined() {
+        if (!selectedAddress || !selectedSNI) return;
+        if (pingInProgress) return;
+        
+        const target = selectedAddress;
+        if (pingCache[target]) {
+            showPingResult(target, pingCache[target]);
+            return;
+        }
+        
+        pingInProgress = true;
+        pingDisplay.innerHTML = '<span class="status-dot yellow"></span> PINGING ' + target + '...';
+        addLog('Pinging ' + target + '...');
+        
+        const start = performance.now();
+        let done = false;
+        const timeout = setTimeout(() => {
+            if (!done) {
+                done = true;
+                pingInProgress = false;
+                const result = { latency: 9999, status: 'timeout' };
+                pingCache[target] = result;
+                showPingResult(target, result);
+                addLog('Ping ' + target + ' timeout');
+            }
+        }, 5000);
+
+        fetch('https://' + target + '/', { mode: 'no-cors', cache: 'no-store' })
+        .then(() => {
+            if (!done) {
+                clearTimeout(timeout);
+                done = true;
+                pingInProgress = false;
+                const latency = Math.round(performance.now() - start);
+                const result = { latency, status: 'ok' };
+                pingCache[target] = result;
+                showPingResult(target, result);
+                addLog('Ping ' + target + ': ' + latency + 'ms');
+            }
+        })
+        .catch(() => {
+            if (!done) {
+                clearTimeout(timeout);
+                done = true;
+                pingInProgress = false;
+                const latency = Math.round(performance.now() - start);
+                const status = latency < 3000 ? 'ok' : 'timeout';
+                const result = { latency, status };
+                pingCache[target] = result;
+                showPingResult(target, result);
+                addLog('Ping ' + target + ': ' + latency + 'ms');
+            }
+        });
+    }
+
+    function showPingResult(addr, result) {
+        if (result.status === 'timeout') {
+            pingDisplay.innerHTML = '<span class="status-dot red"></span> ' + addr + ' : TIMEOUT';
+        } else {
+            const color = result.latency < 200 ? 'green' : (result.latency < 600 ? 'yellow' : 'red');
+            pingDisplay.innerHTML = '<span class="status-dot ' + color + '"></span> ' + addr + ' : ' + result.latency + 'ms';
+        }
+    }
+
+    function getPath() {
+        let path = PATHS[selectedProtocol];
+        if (selectedTransport === 'hu') path += '-hu';
+        else if (selectedTransport === 'xh') path += '-xh';
+        return path;
+    }
+
+    function buildConfig() {
+        const addr = selectedAddress;
+        const sni = selectedSNI;
+        const host = currentHost;
+        const path = getPath();
+        const encPath = encodeURIComponent(path);
+
+        switch (selectedProtocol) {
+            case 'vless':
+                return 'vless://' + PASS + '@' + addr + ':443?encryption=none&flow=none&type=ws&host=' +
+                       host + '&headerType=none&path=' + encPath + '&security=tls&fp=chrome&sni=' +
+                       sni + '&alpn=http%2F1.1#VLESS-' + host;
+            case 'trojan':
+                return 'trojan://' + PASS + '@' + addr + ':443?type=ws&host=' + host +
+                       '&path=' + encPath + '&security=tls&fp=chrome&sni=' + sni +
+                       '&alpn=http%2F1.1#TROJAN-' + host;
+            case 'vmess': {
+                const vmessObj = {
+                    v: '2', ps: 'VMESS-' + host, add: addr, port: '443', id: PASS, aid: '0',
+                    scy: 'auto', net: 'ws', type: 'none', host: host, path: path,
+                    tls: 'tls', sni: sni, fp: 'chrome', alpn: 'http/1.1'
+                };
+                try {
+                    return 'vmess://' + btoa(unescape(encodeURIComponent(JSON.stringify(vmessObj))));
+                } catch (e) {
+                    return 'vmess://' + btoa(JSON.stringify(vmessObj));
+                }
+            }
+            case 'ss': {
+                let ssUserInfo = '';
+                try {
+                    ssUserInfo = btoa('aes-256-gcm:' + PASS);
+                } catch (e) {
+                    ssUserInfo = btoa(unescape(encodeURIComponent('aes-256-gcm:' + PASS)));
+                }
+                const pluginStr = 'obfs-local;obfs=websocket;obfs-host=' + host +
+                                  ';obfs-uri=' + path + ';sni=' + sni;
+                return 'ss://' + ssUserInfo + '@' + addr + ':443?plugin=' +
+                       encodeURIComponent(pluginStr) + '#SHADOWSOCKS-' + host;
+            }
+            default:
+                return '';
+        }
+    }
+
+    function updateConfigDisplay() {
+        configDisplay.textContent = buildConfig();
+    }
+
+    function copyConfig() {
+        const config = buildConfig();
+        const showSuccess = () => {
+            copyBtn.textContent = 'COPIED';
+            copyBtn.classList.add('copied');
+            addLog('Config copied to clipboard');
+            setTimeout(() => {
+                copyBtn.textContent = 'COPY';
+                copyBtn.classList.remove('copied');
+            }, 2500);
+        };
+        const showFail = () => {
+            copyBtn.textContent = 'FAILED';
+            copyBtn.style.borderColor = 'var(--red)';
+            copyBtn.style.color = 'var(--red)';
+            addLog('Copy failed');
+            setTimeout(() => {
+                copyBtn.textContent = 'COPY';
+                copyBtn.style.borderColor = 'var(--border)';
+                copyBtn.style.color = 'var(--text)';
+            }, 2000);
         };
 
-        document.getElementById('wsConfig').innerText = links.wsConfig;
-        document.getElementById('huConfig').innerText = links.huConfig;
-        document.getElementById('grpcConfig').innerText = links.grpcConfig;
-        document.getElementById('xhttpConfig').innerText = links.xhttpConfig;
-
-        function copyConfig(keyId) {
-            navigator.clipboard.writeText(links[keyId]).then(() => {
-                const notice = document.getElementById('toast');
-                notice.classList.add('show');
-                setTimeout(() => { notice.classList.remove('show'); }, 2000);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(config).then(showSuccess).catch(() => {
+                fallbackCopy(config, showSuccess, showFail);
             });
+        } else {
+            fallbackCopy(config, showSuccess, showFail);
         }
-    </script>
+    }
+
+    function fallbackCopy(text, success, fail) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        ta.style.top = '-9999px';
+        ta.style.width = '2px';
+        ta.style.height = '2px';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        try {
+            document.execCommand('copy');
+            success();
+        } catch (e) {
+            fail();
+        }
+        document.body.removeChild(ta);
+    }
+
+    function buildButtonBar(container, items, selected, labels, callback) {
+        container.innerHTML = '';
+        items.forEach(item => {
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.textContent = labels ? labels[item] : item;
+            if (item === selected) btn.classList.add('active');
+            btn.addEventListener('click', () => {
+                container.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                callback(item);
+                updateConfigDisplay();
+            });
+            container.appendChild(btn);
+        });
+    }
+
+    buildButtonBar(protocolBar, PROTOCOLS, selectedProtocol, PROTOCOL_LABELS, (val) => {
+        selectedProtocol = val;
+        addLog('Protocol changed to ' + val);
+    });
+
+    buildButtonBar(transportBar, TRANSPORTS, selectedTransport, TRANSPORT_LABELS, (val) => {
+        selectedTransport = val;
+        addLog('Transport changed to ' + val);
+    });
+
+    copyBtn.addEventListener('click', copyConfig);
+
+    function animateLoadingDigits() {
+        const digits = [d4, d0, d4b];
+        let index = 0;
+        const interval = setInterval(() => {
+            digits.forEach((digit, i) => {
+                if (i === index) {
+                    digit.classList.add('active');
+                    digit.classList.remove('inactive');
+                } else {
+                    digit.classList.add('inactive');
+                    digit.classList.remove('active');
+                }
+            });
+            index = (index + 1) % digits.length;
+        }, 200);
+
+        setTimeout(() => {
+            clearInterval(interval);
+            digits.forEach(digit => {
+                digit.classList.remove('active', 'inactive');
+            });
+            loadingScreen.classList.add('hidden');
+            mainContent.style.display = '';
+            addLog('Portal initialized');
+        }, 3000);
+    }
+
+    animateLoadingDigits();
+    updateConfigDisplay();
+
+})();
+</script>
+
 </body>
 </html>
